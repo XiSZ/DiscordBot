@@ -8,7 +8,6 @@ This bot automatically helps you maintain your Discord Active Developer Badge el
 - 📊 Auto-executes commands every 30 days to ensure active developer status
 - ⚡ Simple and easy setup process
 - 🔄 Automatic reconnection mechanism
-- 📝 Dynamic HTML setup guide generation from environment variables
 
 ## Why do you need this bot?
 
