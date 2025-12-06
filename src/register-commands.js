@@ -24,6 +24,11 @@ const commands = [
         .setRequired(false)
     )
     .toJSON(),
+  // Uptime command to check bot uptime
+  new SlashCommandBuilder()
+    .setName("uptime")
+    .setDescription("Check how long the bot has been running")
+    .toJSON(),
 ];
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);

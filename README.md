@@ -111,6 +111,7 @@ The setup guide (`invite-bot.html`) is automatically generated from your `.env` 
 - `/purge [amount]` - Delete messages in the channel (requires Manage Messages permission)
   - `amount` (optional): Number of messages to delete (1-1000). If not specified, deletes all fetchable messages
   - **Note**: Only messages newer than 14 days can be bulk deleted due to Discord API limitations
+- `/uptime` - Check how long the bot has been running
 
 ## Automated Scheduling
 

@@ -27,6 +27,25 @@ const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
 // Track last execution time
 let lastExecutionTime = Date.now();
 
+// Track bot start time for uptime calculation
+const botStartTime = Date.now();
+
+// Function to format uptime
+function getUptime() {
+  const uptime = Date.now() - botStartTime;
+  const days = Math.floor(uptime / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((uptime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((uptime % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m`;
+  } else if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  } else {
+    return `${minutes}m`;
+  }
+}
+
 // Function to auto-execute slash command
 async function autoExecuteCommand() {
   try {
@@ -86,6 +105,52 @@ function checkAndExecute() {
     console.log(
       `⏳ ${daysRemaining} day(s) remaining until next auto-execution`
     );
+  }
+}
+
+// Rich presence rotation
+let presenceIndex = 0;
+const presenceMessages = [
+  { type: ActivityType.Watching, name: "over your Active Developer status" },
+  { type: ActivityType.Playing, name: "with Discord API" },
+  { type: ActivityType.Listening, name: "commands" },
+  {
+    type: ActivityType.Watching,
+    name: `${client.guilds?.cache.size || 0} servers`,
+  },
+  { type: ActivityType.Playing, name: "Auto-Maintenance Mode" },
+  { type: ActivityType.Competing, name: "the uptime challenge" },
+];
+
+function updateRichPresence() {
+  try {
+    const presence = presenceMessages[presenceIndex];
+
+    // Update server count dynamically
+    if (presence.name.includes("servers")) {
+      presence.name = `${client.guilds.cache.size} server${
+        client.guilds.cache.size !== 1 ? "s" : ""
+      }`;
+    }
+
+    // Update uptime dynamically for competing status
+    if (presence.type === ActivityType.Competing) {
+      presence.name = `Uptime: ${getUptime()}`;
+    }
+
+    client.user.setPresence({
+      activities: [
+        {
+          name: presence.name,
+          type: presence.type,
+        },
+      ],
+      status: "online",
+    });
+
+    presenceIndex = (presenceIndex + 1) % presenceMessages.length;
+  } catch (error) {
+    console.error("❌ Error updating rich presence:", error);
   }
 }
 
@@ -152,17 +217,11 @@ client.once("clientReady", () => {
   // ActivityType.Watching - "Watching [name]" (currently set)
   // ActivityType.Competing - "Competing in [name]"
 
-  // Set rich presence
-  client.user.setPresence({
-    activities: [
-      {
-        name: "Chase the Bug in [Source Code]",
-        type: ActivityType.Playing,
-      },
-    ],
-    status: "online",
-  });
-  console.log("✨ Rich presence set: Watching Active Developer Badge");
+  // Set initial rich presence
+  updateRichPresence();
+
+  // Update rich presence every 30 seconds with rotating messages
+  setInterval(updateRichPresence, 30000);
 
   // Setup auto-execution schedule
   setupAutoExecution();
@@ -194,6 +253,26 @@ client.on("interactionCreate", async (interaction) => {
     });
 
     console.log(`✅ ${interaction.user.tag} executed ping command`);
+  }
+
+  if (interaction.commandName === "uptime") {
+    const uptime = Date.now() - botStartTime;
+    const days = Math.floor(uptime / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(
+      (uptime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
+    const minutes = Math.floor((uptime % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((uptime % (1000 * 60)) / 1000);
+
+    await interaction.reply({
+      content:
+        `⏰ Bot Uptime\n` +
+        `📊 Total: ${days}d ${hours}h ${minutes}m ${seconds}s\n` +
+        `🚀 Started: <t:${Math.floor(botStartTime / 1000)}:R>\n` +
+        `✅ Status: Online and operational`,
+    });
+
+    console.log(`✅ ${interaction.user.tag} executed uptime command`);
   }
 
   if (interaction.commandName === "purge") {
