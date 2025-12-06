@@ -116,7 +116,7 @@ const presenceMessages = [
   { type: ActivityType.Listening, name: "commands" },
   {
     type: ActivityType.Watching,
-    name: `${client.guilds?.cache.size || 0} servers`,
+    name: `Currently active in ${client.guilds?.cache.size || 0} servers`,
   },
   { type: ActivityType.Playing, name: "Auto-Maintenance Mode" },
   { type: ActivityType.Competing, name: "the uptime challenge" },
