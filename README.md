@@ -40,7 +40,7 @@ cd Auto-Discord-Developer-Badge
 1. In Developer Portal, select "OAuth2" > "URL Generator"
 2. Check the following permissions:
    - Scopes: `bot`, `applications.commands`
-   - Bot Permissions: `Send Messages`, `Use Slash Commands`
+   - Bot Permissions: `Send Messages`, `Use Slash Commands`, `Manage Messages` (for purge command)
 3. Copy the generated URL and open it in your browser
 4. Select the server to add the bot to
 
@@ -52,6 +52,7 @@ npm install
 ```
 
 **Note**: The `npm install` command will automatically:
+
 - ✅ Create `.env` file from `.env.example` (if it doesn't exist)
 - ✅ Create `invite-bot.html` from `invite-bot.html.template` (if it doesn't exist)
 
@@ -66,6 +67,7 @@ GUILD_ID=your_server_id
 ```
 
 **How to get these IDs:**
+
 - **DISCORD_TOKEN**: "Reset Token" button on the Bot page
 - **CLIENT_ID**: "APPLICATION ID" on the General Information page
 - **GUILD_ID**: Right-click server icon in Discord → "Copy Server ID" (Developer Mode must be enabled in settings)
@@ -106,10 +108,14 @@ The setup guide (`invite-bot.html`) is automatically generated from your `.env` 
 ## Command List
 
 - `/ping` - Check if the bot is working properly and maintain Active Developer status
+- `/purge [amount]` - Delete messages in the channel (requires Manage Messages permission)
+  - `amount` (optional): Number of messages to delete (1-100). If not specified, deletes all fetchable messages
+  - **Note**: Only messages newer than 14 days can be bulk deleted due to Discord API limitations
 
 ## Automated Scheduling
 
 The bot has built-in automated scheduling:
+
 - Automatically executes a slash command every 30 days
 - Ensures active status within the 60-day requirement
 - No manual intervention required
@@ -119,9 +125,11 @@ The bot has built-in automated scheduling:
 To ensure the bot runs 24/7, it's recommended to deploy to a cloud platform:
 
 ### Option 1: Heroku
+
 1. Sign up for a [Heroku](https://heroku.com) account
 2. Install Heroku CLI
 3. Run:
+
 ```bash
 heroku create
 heroku config:set DISCORD_TOKEN=your_token CLIENT_ID=your_id GUILD_ID=your_guild_id
@@ -129,11 +137,13 @@ git push heroku main
 ```
 
 ### Option 2: Railway
+
 1. Sign up for a [Railway](https://railway.app) account
 2. Connect your GitHub repository
 3. Set environment variables: `DISCORD_TOKEN`, `CLIENT_ID`, `GUILD_ID`
 
 ### Option 3: Render
+
 1. Sign up for a [Render](https://render.com) account
 2. Create a new Web Service
 3. Connect your GitHub repository
@@ -142,15 +152,18 @@ git push heroku main
 ## Troubleshooting
 
 ### Bot Cannot Connect
+
 - Check if `DISCORD_TOKEN` is correct
 - Confirm the bot has been added to the server
 
 ### Slash Commands Not Working
+
 - Run `npm run register` to register commands
 - Wait 1-5 minutes for Discord to update commands
 - Check if the bot has `applications.commands` permission
 
 ### Commands Not Auto-Executing
+
 - Ensure the bot is running continuously (recommend deploying to cloud)
 - Check log output for error messages
 

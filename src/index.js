@@ -150,6 +150,69 @@ client.on('interactionCreate', async (interaction) => {
 
     console.log(`✅ ${interaction.user.tag} executed ping command`);
   }
+
+  if (interaction.commandName === 'purge') {
+    // Check if user has permission to manage messages
+    if (!interaction.memberPermissions.has('ManageMessages')) {
+      await interaction.reply({
+        content: '❌ You need the "Manage Messages" permission to use this command.',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // Check if bot has permission to manage messages
+    if (!interaction.guild.members.me.permissions.has('ManageMessages')) {
+      await interaction.reply({
+        content: '❌ I need the "Manage Messages" permission to delete messages.',
+        ephemeral: true
+      });
+      return;
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+      const amount = interaction.options.getInteger('amount');
+      const channel = interaction.channel;
+
+      let deletedCount = 0;
+
+      if (amount) {
+        // Delete specific amount
+        const messages = await channel.messages.fetch({ limit: amount });
+        const deleted = await channel.bulkDelete(messages, true);
+        deletedCount = deleted.size;
+      } else {
+        // Delete all messages in batches
+        let fetchedMessages;
+        do {
+          fetchedMessages = await channel.messages.fetch({ limit: 100 });
+          if (fetchedMessages.size > 0) {
+            const deleted = await channel.bulkDelete(fetchedMessages, true);
+            deletedCount += deleted.size;
+            
+            // If we deleted fewer than fetched, we've hit messages older than 14 days
+            if (deleted.size < fetchedMessages.size) {
+              break;
+            }
+          }
+        } while (fetchedMessages.size > 0);
+      }
+
+      await interaction.editReply({
+        content: `✅ Successfully deleted ${deletedCount} message(s).\n` +
+                 `${deletedCount < (amount || 100) ? '⚠️ Note: Messages older than 14 days cannot be bulk deleted.' : ''}`
+      });
+
+      console.log(`🗑️ ${interaction.user.tag} purged ${deletedCount} messages in #${channel.name}`);
+    } catch (error) {
+      console.error('❌ Error purging messages:', error);
+      await interaction.editReply({
+        content: '❌ An error occurred while trying to delete messages.'
+      });
+    }
+  }
 });
 
 // Error handling

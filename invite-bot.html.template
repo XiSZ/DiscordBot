@@ -209,8 +209,8 @@ GUILD_ID=your_guild_id_here
         <div class="info-box" style="margin-top: 30px;">
             <strong>💡 Tips:</strong><br>
             • The bot needs at least one channel in the server where it can send messages<br>
-            • Ensure the bot has "Send Messages" and "Use Application Commands" permissions<br>
-            • After completion, you can test by typing <code>/ping</code> in Discord<br>
+            • Ensure the bot has "Send Messages", "Use Application Commands", and "Manage Messages" permissions<br>
+            • After completion, you can test by typing <code>/ping</code> or <code>/purge</code> in Discord<br>
             • For 24/7 operation, deploy to a cloud service like Render or Railway
         </div>
 
