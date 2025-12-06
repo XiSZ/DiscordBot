@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, REST, Routes } from "discord.js";
+import { Client, GatewayIntentBits, ActivityType } from "discord.js";
 import dotenv from "dotenv";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
@@ -145,6 +145,24 @@ client.once("clientReady", () => {
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("🎯 Discord Active Developer Badge Auto-Maintenance Bot");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+  // ActivityType.Playing - "Playing [name]"
+  // ActivityType.Streaming - "Streaming [name]"
+  // ActivityType.Listening - "Listening to [name]"
+  // ActivityType.Watching - "Watching [name]" (currently set)
+  // ActivityType.Competing - "Competing in [name]"
+
+  // Set rich presence
+  client.user.setPresence({
+    activities: [
+      {
+        name: "Chase the Bug in [Source Code]",
+        type: ActivityType.Playing,
+      },
+    ],
+    status: "online",
+  });
+  console.log("✨ Rich presence set: Watching Active Developer Badge");
 
   // Setup auto-execution schedule
   setupAutoExecution();
