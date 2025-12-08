@@ -11,8 +11,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
 });
+
+// Command prefix (can be customized via .env file)
+const PREFIX = process.env.COMMAND_PREFIX || "!";
 
 // Auto-execution interval (30 days)
 const AUTO_EXECUTE_INTERVAL_DAYS = 30;
@@ -1413,6 +1420,126 @@ client.on("interactionCreate", async (interaction) => {
         content: "❌ Failed to clear warnings.",
         ephemeral: true,
       });
+    }
+  }
+});
+
+// Prefix command handler
+client.on("messageCreate", async (message) => {
+  // Ignore bot messages and messages without the prefix
+  if (message.author.bot || !message.content.startsWith(PREFIX)) return;
+
+  // Extract the command and arguments
+  const args = message.content.slice(PREFIX.length).trim().split(/ +/);
+  const command = args.shift()?.toLowerCase();
+
+  if (!command) return;
+
+  // Prefix command: help
+  if (command === "help") {
+    const helpContent =
+      `📖 **Available Commands**\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `**Slash Commands (use /command):**\n` +
+      `\`/ping\` – Check bot latency and badge status\n` +
+      `\`/uptime\` – View bot uptime\n` +
+      `\`/status\` – Show next auto-execution date\n` +
+      `\`/serverinfo\` – Display server information\n` +
+      `\`/userinfo [user]\` – Get user details\n` +
+      `\`/stats\` – View bot performance statistics\n` +
+      `\`/kick <user> [reason]\` – Remove user from server\n` +
+      `\`/ban <user> [reason]\` – Ban user from server\n` +
+      `\`/lock\` – Lock current channel\n` +
+      `\`/unlock\` – Unlock current channel\n` +
+      `\n**Prefix Commands (use ${PREFIX}command):**\n` +
+      `\`${PREFIX}help\` – Show this message\n` +
+      `\`${PREFIX}ping\` – Quick ping response\n` +
+      `\`${PREFIX}uptime\` – Show bot uptime\n` +
+      `\`${PREFIX}prefix\` – Show current command prefix`;
+
+    try {
+      await message.reply({ content: helpContent });
+      console.log(`📖 ${message.author.tag} used prefix command: help`);
+    } catch (error) {
+      console.error("❌ Error sending help:", error);
+    }
+  }
+
+  // Prefix command: ping
+  else if (command === "ping") {
+    const startTime = Date.now();
+    const sentMessage = await message.reply({
+      content: `🏓 Pong! Calculating latency...`,
+    });
+
+    const latency = Date.now() - startTime;
+    const apiLatency = Math.round(client.ws.ping);
+
+    try {
+      await sentMessage.edit({
+        content:
+          `🏓 **Pong!**\n` +
+          `⏱️ Message Latency: ${latency}ms\n` +
+          `💓 API Latency: ${apiLatency}ms\n` +
+          `✅ Bot is working properly`,
+      });
+
+      console.log(`🏓 ${message.author.tag} used prefix command: ping`);
+    } catch (error) {
+      console.error("❌ Error editing ping response:", error);
+    }
+  }
+
+  // Prefix command: uptime
+  else if (command === "uptime") {
+    const uptime = Date.now() - botStartTime;
+    const days = Math.floor(uptime / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(
+      (uptime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
+    const minutes = Math.floor((uptime % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((uptime % (1000 * 60)) / 1000);
+
+    try {
+      await message.reply({
+        content:
+          `✅ **Bot Uptime**\n` +
+          `📊 Total: ${days}d ${hours}h ${minutes}m ${seconds}s\n` +
+          `🚀 Started: <t:${Math.floor(botStartTime / 1000)}:R>\n` +
+          `✅ Status: Online and operational`,
+      });
+
+      console.log(`⏰ ${message.author.tag} used prefix command: uptime`);
+    } catch (error) {
+      console.error("❌ Error sending uptime:", error);
+    }
+  }
+
+  // Prefix command: prefix (show current prefix)
+  else if (command === "prefix") {
+    try {
+      await message.reply({
+        content:
+          `📋 **Current Command Prefix:** \`${PREFIX}\`\n` +
+          `\n💡 You can change this in the \`.env\` file by setting:\n` +
+          `\`\`\`\nCOMMAND_PREFIX=${PREFIX}\n\`\`\`\n` +
+          `Then restart the bot for changes to take effect.`,
+      });
+
+      console.log(`📋 ${message.author.tag} checked the command prefix`);
+    } catch (error) {
+      console.error("❌ Error sending prefix info:", error);
+    }
+  }
+
+  // Unknown command response
+  else {
+    try {
+      await message.reply({
+        content: `❌ Unknown command \`${PREFIX}${command}\`. Use \`${PREFIX}help\` for available commands.`,
+      });
+    } catch (error) {
+      console.error("❌ Error sending unknown command message:", error);
     }
   }
 });

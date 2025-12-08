@@ -64,6 +64,7 @@ Edit the `.env` file and fill in the following information:
 DISCORD_TOKEN=your_bot_token
 CLIENT_ID=your_application_id
 GUILD_ID=your_server_id
+COMMAND_PREFIX=!
 ```
 
 **How to get these IDs:**
@@ -71,6 +72,9 @@ GUILD_ID=your_server_id
 - **DISCORD_TOKEN**: "Reset Token" button on the Bot page
 - **CLIENT_ID**: "APPLICATION ID" on the General Information page
 - **GUILD_ID**: Right-click server icon in Discord → "Copy Server ID" (Developer Mode must be enabled in settings)
+- **COMMAND_PREFIX** (optional): Custom prefix for prefix-based commands (default: `!`)
+  - Can be any character or string (e.g., `.` or `>` or `$` or `cmd`)
+  - Requires restarting the bot for changes to take effect
 
 ### 5. Register Slash Commands
 
@@ -213,7 +217,43 @@ The setup guide (`invite-bot.html`) is automatically generated from your `.env` 
   - `message` (required): Message to send via DM
   - **Note**: User must have DMs enabled for the notification to be sent
 
-## Features
+## Prefix Commands
+
+In addition to slash commands (`/`), the bot supports prefix-based commands. The default prefix is `!` but can be customized via the `COMMAND_PREFIX` environment variable.
+
+### Available Prefix Commands
+
+- `!help` - Display help message with all available commands
+- `!ping` - Quick ping response with latency information
+- `!uptime` - Show current bot uptime
+- `!prefix` - Display the current command prefix and instructions on how to change it
+
+**Example Usage:**
+
+```text
+!ping
+!help
+!uptime
+!prefix
+```
+
+### Changing the Command Prefix
+
+To change the prefix from `!` to something else (e.g., `.` or `>`):
+
+1. Edit your `.env` file:
+
+   ```env
+   COMMAND_PREFIX=.
+   ```
+
+2. Save the file
+3. Restart the bot
+4. The new prefix will take effect immediately
+
+**Note:** Each user can use different prefixes on different servers if they have separate bot instances, but within a single bot instance, the prefix is global.
+
+## Bot Features
 
 ### ✅ Command Visibility & Responses
 
