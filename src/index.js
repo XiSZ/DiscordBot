@@ -263,12 +263,6 @@ client.once("clientReady", () => {
   console.log("🎯 Discord Active Developer Badge Auto-Maintenance Bot");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-  // ActivityType.Playing - "Playing [name]"
-  // ActivityType.Streaming - "Streaming [name]"
-  // ActivityType.Listening - "Listening to [name]"
-  // ActivityType.Watching - "Watching [name]" (currently set)
-  // ActivityType.Competing - "Competing in [name]"
-
   // Set initial rich presence
   updateRichPresence();
 
