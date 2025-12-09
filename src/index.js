@@ -368,7 +368,7 @@ async function checkTwitchStreamers() {
 
           await channel.send({
             embeds: [embed],
-            content: `🔔 **${streamInfo.user_name}** is now streaming!`,
+            content: `@everyone 🔔 **${streamInfo.user_name}** is now streaming!`,
           });
 
           console.log(
