@@ -477,7 +477,12 @@ client.once("clientReady", () => {
   setInterval(updateRichPresence, 30000);
 
   // Setup auto-execution schedule
-  setupAutoExecution();
+  const enableAutoExecution = process.env.ENABLE_AUTO_EXECUTION !== "false";
+  if (enableAutoExecution) {
+    setupAutoExecution();
+  } else {
+    console.log("⏸️  Auto-execution is disabled (ENABLE_AUTO_EXECUTION=false)");
+  }
 });
 
 client.on("interactionCreate", async (interaction) => {
