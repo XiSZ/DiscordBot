@@ -429,28 +429,39 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
   try {
     console.log("🔄 Starting to register slash commands...");
 
-    // Register commands to specific server (instant effect)
-    // await rest.put(
-    //   Routes.applicationGuildCommands(
-    //     process.env.CLIENT_ID,
-    //     process.env.GUILD_ID
-    //   ),
-    //   { body: commands }
-    // );
+    const hasGuildTarget =
+      process.env.GUILD_ID && process.env.GUILD_ID.trim().length > 0;
 
-    // Register commands globally (works in all servers)
-    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {
-      body: commands,
-    });
+    if (hasGuildTarget) {
+      console.log(
+        `🎯 Registering commands to guild ${process.env.GUILD_ID} (instant updates)`
+      );
+      await rest.put(
+        Routes.applicationGuildCommands(
+          process.env.CLIENT_ID,
+          process.env.GUILD_ID
+        ),
+        { body: commands }
+      );
+    } else {
+      console.log(
+        "🌐 No GUILD_ID set; registering commands globally (may take up to 1 hour)"
+      );
+      await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {
+        body: commands,
+      });
+    }
 
     console.log("✅ Successfully registered slash commands!");
     console.log(`📝 Registered ${commands.length} command(s):`);
     commands.forEach((cmd) =>
       console.log(`   - /${cmd.name}: ${cmd.description}`)
     );
-    console.log(
-      "\n💡 Tip: If commands don't appear immediately, please wait 1-5 minutes"
-    );
+    if (!hasGuildTarget) {
+      console.log(
+        "\n💡 Tip: Set GUILD_ID in .env to register instantly to a test server while iterating."
+      );
+    }
   } catch (error) {
     console.error("❌ Error registering slash commands:", error);
 
