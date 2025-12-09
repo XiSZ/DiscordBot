@@ -496,6 +496,7 @@ client.on("interactionCreate", async (interaction) => {
         `\`/serverinfo\` – Display server information\n` +
         `\`/userinfo [user]\` – Get user details\n` +
         `\`/stats\` – View bot performance statistics\n` +
+        `\`/uptime-ranking\` – View bot uptime percentage\n` +
         `\n**Moderation:**\n` +
         `\`/kick <user> [reason]\` – Remove user from server\n` +
         `\`/ban <user> [reason]\` – Ban user from server\n` +
@@ -507,7 +508,7 @@ client.on("interactionCreate", async (interaction) => {
         `\`/unlock\` – Unlock current channel\n` +
         `\`/slowmode <seconds>\` – Set channel slowmode (0 to disable)\n` +
         `\`/purge [amount]\` – Delete messages from channel\n` +
-        `\n**Utility:**\n` +
+        `\n**Utility & Notifications:**\n` +
         `\`/say <message> [channel]\` – Send message as bot\n` +
         `\`/poll <question> <opt1> <opt2> [opt3-5]\` – Create a poll\n` +
         `\`/remind <minutes> <reminder>\` – Set a reminder\n` +
@@ -515,10 +516,10 @@ client.on("interactionCreate", async (interaction) => {
         `\`/avatar [user]\` – View user's avatar\n` +
         `\`/echo <text>\` – Echo back text\n` +
         `\`/notify <user> <message>\` – Send DM notification\n` +
+        `\`/twitch-notify\` – Manage Twitch live notifications\n` +
         `\n**Information:**\n` +
         `\`/roleinfo <role>\` – Get role details\n` +
         `\`/channelinfo [channel]\` – Get channel details\n` +
-        `\`/uptime-ranking\` – View bot uptime percentage\n` +
         `\n**Logging & Monitoring:**\n` +
         `\`/logs [lines]\` – View audit logs\n` +
         `\`/config view\` – View bot configuration\n` +
@@ -1893,10 +1894,38 @@ client.on("messageCreate", async (message) => {
       `\`/serverinfo\` – Display server information\n` +
       `\`/userinfo [user]\` – Get user details\n` +
       `\`/stats\` – View bot performance statistics\n` +
+      `\`/uptime-ranking\` – View bot uptime percentage\n` +
+      `\n**Moderation:**\n` +
       `\`/kick <user> [reason]\` – Remove user from server\n` +
       `\`/ban <user> [reason]\` – Ban user from server\n` +
+      `\`/mute <user> <minutes> [reason]\` – Mute user\n` +
+      `\`/unmute <user>\` – Unmute user\n` +
+      `\`/warn <user> [reason]\` – Warn user\n` +
+      `\`/purge [amount]\` – Delete messages from channel\n` +
+      `\`/slowmode <seconds>\` – Set channel slowmode (0 to disable)\n` +
       `\`/lock\` – Lock current channel\n` +
       `\`/unlock\` – Unlock current channel\n` +
+      `\n**Utility & Notifications:**\n` +
+      `\`/say <message> [channel]\` – Send message as bot\n` +
+      `\`/poll <question> <opt1> <opt2> [opt3-5]\` – Create a poll\n` +
+      `\`/remind <minutes> <reminder>\` – Set a reminder\n` +
+      `\`/invite\` – Get bot invite link\n` +
+      `\`/avatar [user]\` – View user's avatar\n` +
+      `\`/echo <text>\` – Echo back text\n` +
+      `\`/notify <user> <message>\` – Send DM notification\n` +
+      `\`/twitch-notify\` – Manage Twitch live notifications\n` +
+      `\n**Information:**\n` +
+      `\`/roleinfo <role>\` – Get role details\n` +
+      `\`/channelinfo [channel]\` – Get channel details\n` +
+      `\n**Logging & Monitoring:**\n` +
+      `\`/logs [lines]\` – View audit logs\n` +
+      `\`/config view\` – View bot configuration\n` +
+      `\`/backup\` – View server backup info\n` +
+      `\`/banlist\` – View banned users\n` +
+      `\`/clear-warnings <user>\` – Clear user warnings\n` +
+      `\`/tracking toggle\` – Enable/disable activity tracking\n` +
+      `\`/tracking channel\` – Set tracking log channel\n` +
+      `\`/tracking status\` – View tracking configuration\n` +
       `\n**Prefix Commands (use ${PREFIX}command):**\n` +
       `\`${PREFIX}help\` – Show this message\n` +
       `\`${PREFIX}ping\` – Quick ping response\n` +
