@@ -431,6 +431,9 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
     const hasGuildTarget =
       process.env.GUILD_ID && process.env.GUILD_ID.trim().length > 0;
+    const registerGlobalWhenGuild =
+      (process.env.REGISTER_GLOBAL_WHEN_GUILD || "false").toLowerCase() ===
+      "true";
 
     if (hasGuildTarget) {
       console.log(
@@ -443,6 +446,19 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
         ),
         { body: commands }
       );
+
+      if (registerGlobalWhenGuild) {
+        console.log(
+          "🌐 REGISTER_GLOBAL_WHEN_GUILD=true — also registering globally (may show duplicates in UI)"
+        );
+        await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {
+          body: commands,
+        });
+      } else {
+        console.log(
+          "🌐 REGISTER_GLOBAL_WHEN_GUILD=false — skipping global registration to avoid duplicates"
+        );
+      }
     } else {
       console.log(
         "🌐 No GUILD_ID set; registering commands globally (may take up to 1 hour)"
@@ -457,9 +473,18 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
     commands.forEach((cmd) =>
       console.log(`   - /${cmd.name}: ${cmd.description}`)
     );
+    console.log(
+      `\nℹ️ Mode: ${
+        hasGuildTarget ? "Guild" : "Global"
+      } | Global also registered with guild: ${registerGlobalWhenGuild}`
+    );
     if (!hasGuildTarget) {
       console.log(
-        "\n💡 Tip: Set GUILD_ID in .env to register instantly to a test server while iterating."
+        "💡 Tip: Set GUILD_ID in .env to register instantly to a test server while iterating."
+      );
+    } else if (!registerGlobalWhenGuild) {
+      console.log(
+        "💡 Set REGISTER_GLOBAL_WHEN_GUILD=true if you explicitly want both guild and global copies (may duplicate in UI)."
       );
     }
   } catch (error) {
