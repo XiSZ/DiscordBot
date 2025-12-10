@@ -179,6 +179,81 @@ function saveTwitchData(guildId) {
   }
 }
 
+// Get path to tracking config file
+function getTrackingConfigPath(guildId) {
+  return join(SERVERS_DIR, guildId, "tracking-config.json");
+}
+
+// Load tracking data from all server config files
+function loadTrackingData() {
+  if (!existsSync(SERVERS_DIR)) {
+    return;
+  }
+
+  try {
+    const serverDirs = readdirSync(SERVERS_DIR);
+    let loadedCount = 0;
+    const loadedServers = [];
+
+    serverDirs.forEach((guildId) => {
+      const configPath = getTrackingConfigPath(guildId);
+      if (existsSync(configPath)) {
+        try {
+          const data = JSON.parse(readFileSync(configPath, "utf-8"));
+          if (data.enabled !== undefined || data.channelId !== undefined) {
+            trackingConfig.set(guildId, {
+              enabled: data.enabled || false,
+              channelId: data.channelId || null,
+            });
+
+            // Get server name if available
+            const guild = client.guilds.cache.get(guildId);
+            const serverName = guild?.name || guildId;
+            loadedServers.push(`${serverName} (${guildId})`);
+            loadedCount++;
+          }
+        } catch (error) {
+          console.error(
+            `❌ Error loading tracking config for guild ${guildId}:`,
+            error.message
+          );
+        }
+      }
+    });
+
+    if (loadedCount > 0) {
+      console.log(
+        `✅ Loaded tracking configuration for ${loadedCount} server(s):\n   ${loadedServers.join(
+          "\n   "
+        )}`
+      );
+    }
+  } catch (error) {
+    console.error("❌ Error loading tracking data:", error);
+  }
+}
+
+// Save tracking data for a specific server
+function saveTrackingData(guildId) {
+  try {
+    ensureServerDirectory(guildId);
+
+    const configPath = getTrackingConfigPath(guildId);
+    const config = trackingConfig.get(guildId);
+    const data = {
+      enabled: config?.enabled || false,
+      channelId: config?.channelId || null,
+    };
+
+    writeFileSync(configPath, JSON.stringify(data, null, 2));
+    console.log(`✅ Saved tracking configuration for server ${guildId}`);
+  } catch (error) {
+    console.error(
+      `❌ Failed to save tracking data for server ${guildId}: ${error.message}`
+    );
+  }
+}
+
 // Moderator role names that can use moderation commands (customize as needed)
 const MODERATOR_ROLE_NAMES = [
   "Moderator",
@@ -616,6 +691,9 @@ client.once("clientReady", () => {
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("🎯 Discord Active Developer Badge Auto-Maintenance Bot");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+  // Load tracking configuration from disk
+  loadTrackingData();
 
   // Initialize Twitch API if credentials are available
   if (process.env.TWITCH_CLIENT_ID && process.env.TWITCH_ACCESS_TOKEN) {
@@ -1913,6 +1991,7 @@ client.on("interactionCreate", async (interaction) => {
       }
 
       trackingConfig.get(guildId).enabled = enabled;
+      saveTrackingData(guildId);
 
       await interaction.reply({
         content: `✅ Guild activity tracking has been **${
@@ -1946,6 +2025,7 @@ client.on("interactionCreate", async (interaction) => {
       }
 
       trackingConfig.get(guildId).channelId = channel.id;
+      saveTrackingData(guildId);
 
       await interaction.reply({
         content: `✅ Tracking logs will now be sent to ${channel}.${
