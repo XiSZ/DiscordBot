@@ -127,6 +127,7 @@ function loadTwitchData() {
   try {
     const serverDirs = readdirSync(SERVERS_DIR);
     let loadedCount = 0;
+    const loadedServers = [];
 
     serverDirs.forEach((guildId) => {
       const configPath = getServerConfigPath(guildId);
@@ -139,6 +140,11 @@ function loadTwitchData() {
           if (data.channelId) {
             twitchNotificationChannels.set(guildId, data.channelId);
           }
+
+          // Get server name if available
+          const guild = client.guilds.cache.get(guildId);
+          const serverName = guild?.name || guildId;
+          loadedServers.push(`${serverName} (${guildId})`);
           loadedCount++;
         } catch (error) {
           console.error(
@@ -151,7 +157,9 @@ function loadTwitchData() {
 
     if (loadedCount > 0) {
       console.log(
-        `✅ Loaded Twitch configuration for ${loadedCount} server(s)`
+        `✅ Loaded Twitch configuration for ${loadedCount} server(s):\n   ${loadedServers.join(
+          "\n   "
+        )}`
       );
     }
   } catch (error) {
