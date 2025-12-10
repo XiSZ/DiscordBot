@@ -221,6 +221,40 @@ function getLogChannel(guildId) {
   return trackingConfig.get(guildId)?.channelId || null;
 }
 
+// Helper function to create tracking event embed with clickable user info
+function createTrackingEmbed(
+  title,
+  description,
+  user = null,
+  color = 0x3498db
+) {
+  const embed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(description)
+    .setColor(color)
+    .setTimestamp();
+
+  if (user) {
+    embed.addFields(
+      {
+        name: "User",
+        value: `<@${user.id}> (\`${user.id}\`)`,
+        inline: false,
+      },
+      {
+        name: "Tag",
+        value: user.tag || "Unknown",
+        inline: true,
+      }
+    );
+    if (user.avatar) {
+      embed.setThumbnail(user.displayAvatarURL({ size: 128 }));
+    }
+  }
+
+  return embed;
+}
+
 // Helper function to log tracking events
 async function logTrackingEvent(guildId, message, embed = null) {
   if (!isTrackingEnabled(guildId)) return;
@@ -2250,21 +2284,29 @@ client.on("messageCreate", async (message) => {
 // Track message deletions
 client.on("messageDelete", async (message) => {
   if (message.partial || !message.guild) return;
-  const msg = `🗑️ [MESSAGE DELETE] ${
-    message.author?.tag || "Unknown"
-  } deleted message in #${message.channel.name}: "${message.content?.substring(
-    0,
-    50
-  )}${message.content?.length > 50 ? "..." : ""}"`;
-  await logTrackingEvent(message.guild.id, msg);
+  const embed = createTrackingEmbed(
+    "🗑️ Message Deleted",
+    `**Channel:** #${message.channel.name}\n**Content:** ${
+      message.content?.substring(0, 200) || "(no content)"
+    }${message.content?.length > 200 ? "..." : ""}`,
+    message.author,
+    0xe74c3c
+  );
+  await logTrackingEvent(message.guild.id, null, embed);
 });
 
 // Track bulk message deletions
 client.on("messageDeleteBulk", async (messages) => {
   const channel = messages.first()?.channel;
   if (!channel?.guild) return;
-  const msg = `🗑️ [BULK DELETE] ${messages.size} messages deleted in #${channel.name}`;
-  await logTrackingEvent(channel.guild.id, msg);
+  const embed = new EmbedBuilder()
+    .setTitle("🗑️ Bulk Messages Deleted")
+    .setDescription(
+      `**Channel:** #${channel.name}\n**Count:** ${messages.size} messages deleted`
+    )
+    .setColor(0xe74c3c)
+    .setTimestamp();
+  await logTrackingEvent(channel.guild.id, null, embed);
 });
 
 // Track message edits
@@ -2272,28 +2314,43 @@ client.on("messageUpdate", async (oldMessage, newMessage) => {
   if (oldMessage.partial || newMessage.partial || !newMessage.guild) return;
   if (oldMessage.content === newMessage.content) return; // Ignore embed updates
 
-  const msg = `✏️ [MESSAGE EDIT] ${newMessage.author?.tag} in #${
-    newMessage.channel.name
-  }\n   Old: "${oldMessage.content?.substring(0, 50)}${
-    oldMessage.content?.length > 50 ? "..." : ""
-  }"\n   New: "${newMessage.content?.substring(0, 50)}${
-    newMessage.content?.length > 50 ? "..." : ""
-  }"`;
-  await logTrackingEvent(newMessage.guild.id, msg);
+  const embed = createTrackingEmbed(
+    "✏️ Message Edited",
+    `**Channel:** #${newMessage.channel.name}\n**Old Content:** \`\`\`${
+      oldMessage.content?.substring(0, 200) || "(no content)"
+    }${
+      oldMessage.content?.length > 200 ? "..." : ""
+    }\`\`\`\n**New Content:** \`\`\`${
+      newMessage.content?.substring(0, 200) || "(no content)"
+    }${newMessage.content?.length > 200 ? "..." : ""}\`\`\``,
+    newMessage.author,
+    0xf39c12
+  );
+  await logTrackingEvent(newMessage.guild.id, null, embed);
 });
 
 // Track members joining
 client.on("guildMemberAdd", async (member) => {
-  const msg = `➕ [MEMBER JOIN] ${member.user.tag} (${
-    member.id
-  })\n   Account created: ${member.user.createdAt.toLocaleString()}`;
-  await logTrackingEvent(member.guild.id, msg);
+  const embed = createTrackingEmbed(
+    "➕ Member Joined",
+    `**Account Created:** ${member.user.createdAt.toLocaleString()}\n**Join Timestamp:** <t:${Math.floor(
+      Date.now() / 1000
+    )}:F>`,
+    member.user,
+    0x2ecc71
+  );
+  await logTrackingEvent(member.guild.id, null, embed);
 });
 
 // Track members leaving
 client.on("guildMemberRemove", async (member) => {
-  const msg = `➖ [MEMBER LEAVE] ${member.user.tag} (${member.id})`;
-  await logTrackingEvent(member.guild.id, msg);
+  const embed = createTrackingEmbed(
+    "➖ Member Left",
+    `**Leave Timestamp:** <t:${Math.floor(Date.now() / 1000)}:F>`,
+    member.user,
+    0xe74c3c
+  );
+  await logTrackingEvent(member.guild.id, null, embed);
 });
 
 // Track member updates (nickname, roles, avatar, etc.)
@@ -2313,8 +2370,13 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     const oldAvatar = oldMember.avatarURL({ size: 128 }) || "None";
     const newAvatar = newMember.avatarURL({ size: 128 }) || "None";
     changes.push(`Server Avatar: Changed`);
-    const msg = `🖼️ [AVATAR CHANGE] ${newMember.user.tag} changed server avatar\n   Old: ${oldAvatar}\n   New: ${newAvatar}`;
-    await logTrackingEvent(newMember.guild.id, msg);
+    const embed = createTrackingEmbed(
+      "🖼️ Server Avatar Changed",
+      `**Old Avatar:** [Link](${oldAvatar})\n**New Avatar:** [Link](${newAvatar})`,
+      newMember.user,
+      0x9b59b6
+    );
+    await logTrackingEvent(newMember.guild.id, null, embed);
   }
 
   const addedRoles = newMember.roles.cache.filter(
@@ -2325,23 +2387,36 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
   );
 
   if (addedRoles.size > 0) {
-    const rolesList = addedRoles.map((r) => r.name).join(", ");
+    const rolesList = addedRoles.map((r) => `<@&${r.id}>`).join(", ");
     changes.push(`Added roles: ${rolesList}`);
-    const msg = `🎭 [ROLE CLAIM] ${newMember.user.tag} claimed role(s): ${rolesList}`;
-    await logTrackingEvent(newMember.guild.id, msg);
+    const embed = createTrackingEmbed(
+      "🎭 Roles Claimed",
+      `**Roles Added:** ${rolesList}`,
+      newMember.user,
+      0x3498db
+    );
+    await logTrackingEvent(newMember.guild.id, null, embed);
   }
   if (removedRoles.size > 0) {
-    const rolesList = removedRoles.map((r) => r.name).join(", ");
+    const rolesList = removedRoles.map((r) => `<@&${r.id}>`).join(", ");
     changes.push(`Removed roles: ${rolesList}`);
-    const msg = `🎭 [ROLE REMOVE] ${newMember.user.tag} lost role(s): ${rolesList}`;
-    await logTrackingEvent(newMember.guild.id, msg);
+    const embed = createTrackingEmbed(
+      "🎭 Roles Removed",
+      `**Roles Removed:** ${rolesList}`,
+      newMember.user,
+      0xe74c3c
+    );
+    await logTrackingEvent(newMember.guild.id, null, embed);
   }
 
   if (changes.length > 0 && !addedRoles.size && !removedRoles.size) {
-    const msg = `👤 [MEMBER UPDATE] ${newMember.user.tag}\n   ${changes.join(
-      "\n   "
-    )}`;
-    await logTrackingEvent(newMember.guild.id, msg);
+    const embed = createTrackingEmbed(
+      "👤 Member Updated",
+      changes.join("\n"),
+      newMember.user,
+      0x95a5a6
+    );
+    await logTrackingEvent(newMember.guild.id, null, embed);
   }
 });
 
@@ -2367,8 +2442,13 @@ client.on("userUpdate", async (oldUser, newUser) => {
     // Log to all guilds where bot and user both exist
     for (const [guildId, guild] of client.guilds.cache) {
       if (guild.members.cache.has(newUser.id)) {
-        const msg = `🖼️ [GLOBAL AVATAR] ${newUser.tag} changed their global avatar\n   Old: ${oldAvatar}\n   New: ${newAvatar}`;
-        await logTrackingEvent(guildId, msg);
+        const embed = createTrackingEmbed(
+          "🖼️ Global Avatar Changed",
+          `**Old Avatar:** [Link](${oldAvatar})\n**New Avatar:** [Link](${newAvatar})`,
+          newUser,
+          0x9b59b6
+        );
+        await logTrackingEvent(guildId, null, embed);
       }
     }
   }
@@ -2381,10 +2461,13 @@ client.on("userUpdate", async (oldUser, newUser) => {
     // Log username/discriminator changes to all mutual guilds
     for (const [guildId, guild] of client.guilds.cache) {
       if (guild.members.cache.has(newUser.id)) {
-        const msg = `👤 [USER UPDATE] ${
-          newUser.tag
-        } updated their profile\n   ${changes.join("\n   ")}`;
-        await logTrackingEvent(guildId, msg);
+        const embed = createTrackingEmbed(
+          "👤 User Profile Updated",
+          changes.join("\n"),
+          newUser,
+          0xf39c12
+        );
+        await logTrackingEvent(guildId, null, embed);
       }
     }
   }
@@ -2396,33 +2479,54 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
   if (!newState.guild) return;
 
   if (!oldState.channel && newState.channel) {
-    const msg = `🔊 [VOICE JOIN] ${member.user.tag} joined voice channel "${newState.channel.name}"`;
-    await logTrackingEvent(newState.guild.id, msg);
+    const embed = createTrackingEmbed(
+      "🔊 Voice Channel Joined",
+      `**Channel:** <#${newState.channel.id}>`,
+      member.user,
+      0x3498db
+    );
+    await logTrackingEvent(newState.guild.id, null, embed);
   } else if (oldState.channel && !newState.channel) {
-    const msg = `🔇 [VOICE LEAVE] ${member.user.tag} left voice channel "${oldState.channel.name}"`;
-    await logTrackingEvent(oldState.guild.id, msg);
+    const embed = createTrackingEmbed(
+      "🔇 Voice Channel Left",
+      `**Channel:** <#${oldState.channel.id}>`,
+      member.user,
+      0x95a5a6
+    );
+    await logTrackingEvent(oldState.guild.id, null, embed);
   } else if (
     oldState.channel &&
     newState.channel &&
     oldState.channel.id !== newState.channel.id
   ) {
-    const msg = `🔀 [VOICE SWITCH] ${member.user.tag} moved from "${oldState.channel.name}" to "${newState.channel.name}"`;
-    await logTrackingEvent(newState.guild.id, msg);
+    const embed = createTrackingEmbed(
+      "🔀 Voice Channel Switched",
+      `**From:** <#${oldState.channel.id}>\n**To:** <#${newState.channel.id}>`,
+      member.user,
+      0xf39c12
+    );
+    await logTrackingEvent(newState.guild.id, null, embed);
   }
 
   // Track mute/unmute
   if (oldState.serverMute !== newState.serverMute) {
-    const msg = `🔇 [VOICE MUTE] ${member.user.tag} was ${
-      newState.serverMute ? "server muted" : "server unmuted"
-    }`;
-    await logTrackingEvent(newState.guild.id, msg);
+    const embed = createTrackingEmbed(
+      newState.serverMute ? "🔇 Server Muted" : "🔊 Server Unmuted",
+      `**Status:** ${newState.serverMute ? "Muted" : "Unmuted"}`,
+      member.user,
+      newState.serverMute ? 0xe74c3c : 0x2ecc71
+    );
+    await logTrackingEvent(newState.guild.id, null, embed);
   }
 
   if (oldState.serverDeaf !== newState.serverDeaf) {
-    const msg = `🔇 [VOICE DEAF] ${member.user.tag} was ${
-      newState.serverDeaf ? "server deafened" : "server undeafened"
-    }`;
-    await logTrackingEvent(newState.guild.id, msg);
+    const embed = createTrackingEmbed(
+      newState.serverDeaf ? "🔇 Server Deafened" : "🔊 Server Undeafened",
+      `**Status:** ${newState.serverDeaf ? "Deafened" : "Undeafened"}`,
+      member.user,
+      newState.serverDeaf ? 0xe74c3c : 0x2ecc71
+    );
+    await logTrackingEvent(newState.guild.id, null, embed);
   }
 });
 
@@ -2437,8 +2541,13 @@ client.on("messageReactionAdd", async (reaction, user) => {
   }
   if (!reaction.message.guild) return;
 
-  const msg = `👍 [REACTION ADD] ${user.tag} added ${reaction.emoji.name} to message in #${reaction.message.channel.name}`;
-  await logTrackingEvent(reaction.message.guild.id, msg);
+  const embed = createTrackingEmbed(
+    "👍 Reaction Added",
+    `**Reaction:** ${reaction.emoji}\n**Channel:** <#${reaction.message.channel.id}>\n**Message:** [Jump to message](${reaction.message.url})`,
+    user,
+    0x3498db
+  );
+  await logTrackingEvent(reaction.message.guild.id, null, embed);
 });
 
 client.on("messageReactionRemove", async (reaction, user) => {
@@ -2451,22 +2560,43 @@ client.on("messageReactionRemove", async (reaction, user) => {
   }
   if (!reaction.message.guild) return;
 
-  const msg = `👎 [REACTION REMOVE] ${user.tag} removed ${reaction.emoji.name} from message in #${reaction.message.channel.name}`;
-  await logTrackingEvent(reaction.message.guild.id, msg);
+  const embed = createTrackingEmbed(
+    "👎 Reaction Removed",
+    `**Reaction:** ${reaction.emoji}\n**Channel:** <#${reaction.message.channel.id}>\n**Message:** [Jump to message](${reaction.message.url})`,
+    user,
+    0x95a5a6
+  );
+  await logTrackingEvent(reaction.message.guild.id, null, embed);
 });
 
 // Track channel creation
 client.on("channelCreate", async (channel) => {
   if (!channel.guild) return;
-  const msg = `➕ [CHANNEL CREATE] Channel "#${channel.name}" created (Type: ${channel.type})`;
-  await logTrackingEvent(channel.guild.id, msg);
+  const embed = new EmbedBuilder()
+    .setTitle("➕ Channel Created")
+    .setDescription(
+      `**Channel:** <#${channel.id}>\n**Type:** ${
+        channel.type
+      }\n**Created:** <t:${Math.floor(Date.now() / 1000)}:F>`
+    )
+    .setColor(0x2ecc71)
+    .setTimestamp();
+  await logTrackingEvent(channel.guild.id, null, embed);
 });
 
 // Track channel deletion
 client.on("channelDelete", async (channel) => {
   if (!channel.guild) return;
-  const msg = `➖ [CHANNEL DELETE] Channel "#${channel.name}" deleted`;
-  await logTrackingEvent(channel.guild.id, msg);
+  const embed = new EmbedBuilder()
+    .setTitle("➖ Channel Deleted")
+    .setDescription(
+      `**Channel:** ${channel.name}\n**Type:** ${
+        channel.type
+      }\n**Deleted:** <t:${Math.floor(Date.now() / 1000)}:F>`
+    )
+    .setColor(0xe74c3c)
+    .setTimestamp();
+  await logTrackingEvent(channel.guild.id, null, embed);
 });
 
 // Track channel updates
