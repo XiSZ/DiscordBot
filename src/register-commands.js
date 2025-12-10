@@ -21,6 +21,24 @@ const commands = [
       "View next auto-execution date for your Active Developer badge"
     )
     .toJSON(),
+  // Auto-execution control
+  new SlashCommandBuilder()
+    .setName("auto-execution")
+    .setDescription("Enable, disable, or view auto-execution status")
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("enable")
+        .setDescription("Enable auto-execution for Active Developer upkeep")
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("disable")
+        .setDescription("Disable auto-execution for Active Developer upkeep")
+    )
+    .addSubcommand((subcommand) =>
+      subcommand.setName("status").setDescription("Show auto-execution state")
+    )
+    .toJSON(),
   // Help command
   new SlashCommandBuilder()
     .setName("help")

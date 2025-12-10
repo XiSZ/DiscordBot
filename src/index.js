@@ -44,6 +44,12 @@ const MAX_TIMEOUT = 2147483647;
 // Check once per day if execution is needed
 const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
 
+// Auto-execution toggle and timers
+let autoExecutionEnabled =
+  (process.env.ENABLE_AUTO_EXECUTION || "true").toLowerCase() !== "false";
+let autoExecutionTimeout = null;
+let autoExecutionInterval = null;
+
 // Track last execution time
 let lastExecutionTime = Date.now();
 
@@ -179,6 +185,11 @@ function getUptime() {
 
 // Function to auto-execute slash command
 async function autoExecuteCommand() {
+  if (!autoExecutionEnabled) {
+    console.log("⏭️  Skipping auto-execution because it is disabled");
+    return;
+  }
+
   try {
     const guild = await client.guilds.fetch(process.env.GUILD_ID);
     const channels = await guild.channels.fetch();
@@ -221,6 +232,11 @@ async function autoExecuteCommand() {
 
 // Check if auto-command execution is needed
 function checkAndExecute() {
+  if (!autoExecutionEnabled) {
+    console.log("⏭️  Auto-execution disabled; skipping check");
+    return;
+  }
+
   const now = Date.now();
   const timeSinceLastExecution = now - lastExecutionTime;
 
@@ -288,16 +304,42 @@ function updateRichPresence() {
   }
 }
 
+function clearAutoExecutionTimers() {
+  if (autoExecutionTimeout) {
+    clearTimeout(autoExecutionTimeout);
+    autoExecutionTimeout = null;
+  }
+  if (autoExecutionInterval) {
+    clearInterval(autoExecutionInterval);
+    autoExecutionInterval = null;
+  }
+}
+
 // Setup auto-execution schedule
 function setupAutoExecution() {
-  // Execute once immediately
-  setTimeout(() => {
+  clearAutoExecutionTimers();
+
+  if (!autoExecutionEnabled) {
+    console.log("⏸️  Auto-execution is disabled; timers not scheduled");
+    return;
+  }
+
+  // Execute once shortly after startup
+  autoExecutionTimeout = setTimeout(() => {
+    if (!autoExecutionEnabled) {
+      console.log("⏭️  Skipping first auto-execution (disabled)");
+      return;
+    }
     console.log("🚀 First auto-execution...");
     autoExecuteCommand();
   }, 60000); // Execute after 1 minute from startup
 
   // Check daily if execution is needed (instead of using interval exceeding 32-bit limit)
-  setInterval(() => {
+  autoExecutionInterval = setInterval(() => {
+    if (!autoExecutionEnabled) {
+      console.log("⏭️  Auto-execution disabled; skipping interval check");
+      return;
+    }
     checkAndExecute();
   }, CHECK_INTERVAL);
 
@@ -314,6 +356,16 @@ function setupAutoExecution() {
       "en-US"
     )}`
   );
+}
+
+function enableAutoExecutionRuntime() {
+  autoExecutionEnabled = true;
+  setupAutoExecution();
+}
+
+function disableAutoExecutionRuntime() {
+  autoExecutionEnabled = false;
+  clearAutoExecutionTimers();
 }
 
 // Check Twitch streamers for live status
@@ -477,8 +529,7 @@ client.once("clientReady", () => {
   setInterval(updateRichPresence, 30000);
 
   // Setup auto-execution schedule
-  const enableAutoExecution = process.env.ENABLE_AUTO_EXECUTION !== "false";
-  if (enableAutoExecution) {
+  if (autoExecutionEnabled) {
     setupAutoExecution();
     console.log("✅ Auto-execution is enabled");
   } else {
@@ -529,6 +580,7 @@ client.on("interactionCreate", async (interaction) => {
         `\n**Logging & Monitoring:**\n` +
         `\`/logs [lines]\` – View audit logs\n` +
         `\`/config view\` – View bot configuration\n` +
+        `\`/auto-execution <enable|disable|status>\` – Control auto-execution\n` +
         `\`/backup\` – View server backup info\n` +
         `\`/banlist\` – View banned users\n` +
         `\`/clear-warnings <user>\` – Clear user warnings\n` +
@@ -553,13 +605,17 @@ client.on("interactionCreate", async (interaction) => {
       (AUTO_EXECUTE_INTERVAL_MS - timeSinceLastAuto) / (1000 * 60 * 60 * 24)
     );
 
+    const autoExecutionLine = autoExecutionEnabled
+      ? `📅 Days until next auto-execution: ${daysUntilNext} day(s)\n`
+      : "⏸️ Auto-execution is disabled. Use /auto-execution enable to resume.\n";
+
     await interaction.editReply({
       content:
         `✅ **Pong!**\n` +
         `⏱️ Latency: ${latency}ms\n` +
         `💓 API Latency: ${apiLatency}ms\n` +
         `✅ Bot is working properly\n` +
-        `📅 Days until next auto-execution: ${daysUntilNext} day(s)\n` +
+        autoExecutionLine +
         `🎖️ Your Active Developer status has been updated!`,
     });
 
@@ -685,6 +741,13 @@ client.on("interactionCreate", async (interaction) => {
       lastExecutionTime + AUTO_EXECUTE_INTERVAL_MS
     );
 
+    const nextExecutionText = autoExecutionEnabled
+      ? nextExecutionDate.toLocaleString("en-US")
+      : "Paused (auto-execution disabled)";
+    const timeRemainingText = autoExecutionEnabled
+      ? `${daysUntilNext}d ${hoursUntilNext}h`
+      : "N/A (disabled)";
+
     await interaction.reply({
       content:
         `🎖️ **Active Developer Badge Status**\n` +
@@ -692,13 +755,87 @@ client.on("interactionCreate", async (interaction) => {
         `📅 Last auto-execution: <t:${Math.floor(
           lastExecutionTime / 1000
         )}:R>\n` +
-        `⏰ Next scheduled: ${nextExecutionDate.toLocaleString("en-US")}\n` +
-        `⏳ Time remaining: ${daysUntilNext}d ${hoursUntilNext}h\n` +
+        `⏰ Next scheduled: ${nextExecutionText}\n` +
+        `⏳ Time remaining: ${timeRemainingText}\n` +
         `🤖 Bot Status: Online and maintaining your badge\n` +
-        `✅ Auto-execution: Enabled`,
+        `✅ Auto-execution: ${autoExecutionEnabled ? "Enabled" : "Disabled"}`,
     });
 
     console.log(`✅ ${interaction.user.tag} executed status command`);
+  }
+
+  // Auto-execution command - runtime enable/disable/status
+  if (interaction.commandName === "auto-execution") {
+    if (!interaction.memberPermissions.has("ManageGuild")) {
+      await interaction.reply({
+        content:
+          '❌ You need the "Manage Server" permission to update auto-execution.',
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const subcommand = interaction.options.getSubcommand();
+    const nextExecutionDate = new Date(
+      lastExecutionTime + AUTO_EXECUTE_INTERVAL_MS
+    );
+
+    if (subcommand === "enable") {
+      enableAutoExecutionRuntime();
+
+      await interaction.reply({
+        content: `✅ Auto-execution enabled.
+📅 Next scheduled: ${nextExecutionDate.toLocaleString("en-US")}
+⏱️ Interval: ${AUTO_EXECUTE_INTERVAL_DAYS} days`,
+        ephemeral: true,
+      });
+
+      console.log(`▶️ ${interaction.user.tag} enabled auto-execution`);
+      return;
+    }
+
+    if (subcommand === "disable") {
+      disableAutoExecutionRuntime();
+
+      await interaction.reply({
+        content:
+          "⏸️ Auto-execution disabled. No automated runs will occur until re-enabled.",
+        ephemeral: true,
+      });
+
+      console.log(`⏹️ ${interaction.user.tag} disabled auto-execution`);
+      return;
+    }
+
+    // status subcommand
+    const timeSinceLastAuto = Date.now() - lastExecutionTime;
+    const daysUntilNext = Math.ceil(
+      (AUTO_EXECUTE_INTERVAL_MS - timeSinceLastAuto) / (1000 * 60 * 60 * 24)
+    );
+    const hoursUntilNext = Math.ceil(
+      ((AUTO_EXECUTE_INTERVAL_MS - timeSinceLastAuto) % (1000 * 60 * 60 * 24)) /
+        (1000 * 60 * 60)
+    );
+
+    await interaction.reply({
+      content: `🤖 **Auto-Execution Status**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 Last run: <t:${Math.floor(lastExecutionTime / 1000)}:R>
+⏰ Next scheduled: ${
+        autoExecutionEnabled
+          ? nextExecutionDate.toLocaleString("en-US")
+          : "Paused (auto-execution disabled)"
+      }
+⏳ Time remaining: ${
+        autoExecutionEnabled
+          ? `${daysUntilNext}d ${hoursUntilNext}h`
+          : "N/A (disabled)"
+      }
+✅ Auto-execution: ${autoExecutionEnabled ? "Enabled" : "Disabled"}`,
+      ephemeral: true,
+    });
+
+    console.log(`ℹ️ ${interaction.user.tag} viewed auto-execution status`);
   }
 
   // Server info command
@@ -1297,7 +1434,6 @@ client.on("interactionCreate", async (interaction) => {
     if (subcommand === "view") {
       try {
         const guildId = interaction.guild.id;
-        const autoExecEnabled = true; // Default enabled
         const nextExecDate = new Date(
           lastExecutionTime + AUTO_EXECUTE_INTERVAL_MS
         );
@@ -1307,9 +1443,13 @@ client.on("interactionCreate", async (interaction) => {
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `🆔 **Guild ID:** ${guildId}\n` +
           `🤖 **Auto-Execution:** ${
-            autoExecEnabled ? "✅ Enabled" : "❌ Disabled"
+            autoExecutionEnabled ? "✅ Enabled" : "❌ Disabled"
           }\n` +
-          `📅 **Next Execution:** ${nextExecDate.toLocaleString("en-US")}\n` +
+          `📅 **Next Execution:** ${
+            autoExecutionEnabled
+              ? nextExecDate.toLocaleString("en-US")
+              : "Paused (auto-execution disabled)"
+          }\n` +
           `⏱️ **Execution Interval:** ${AUTO_EXECUTE_INTERVAL_DAYS} days\n` +
           `💓 **API Latency:** ${Math.round(client.ws.ping)}ms`;
 
