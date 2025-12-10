@@ -357,14 +357,20 @@ function createTrackingEmbed(
 }
 
 // Helper function to log tracking events
-async function logTrackingEvent(guildId, message, embed = null, eventType = null, channelId = null) {
+async function logTrackingEvent(
+  guildId,
+  message,
+  embed = null,
+  eventType = null,
+  channelId = null
+) {
   if (!isTrackingEnabled(guildId)) return;
 
   // Check if event type is enabled
   if (eventType) {
     const config = trackingConfig.get(guildId);
     const eventConfig = config?.events;
-    
+
     if (eventConfig) {
       const eventTypeMap = {
         message: "messages",
@@ -374,7 +380,7 @@ async function logTrackingEvent(guildId, message, embed = null, eventType = null
         channel: "channels",
         userUpdate: "userUpdates",
       };
-      
+
       const eventKey = eventTypeMap[eventType];
       if (eventKey && !eventConfig[eventKey]) {
         return; // Event type is disabled
@@ -2112,9 +2118,10 @@ client.on("interactionCreate", async (interaction) => {
         userUpdates: true,
       };
 
-      const ignoredChannelsStr = ignoredChannels.length > 0 
-        ? ignoredChannels.map(id => `<#${id}>`).join(", ")
-        : "None";
+      const ignoredChannelsStr =
+        ignoredChannels.length > 0
+          ? ignoredChannels.map((id) => `<#${id}>`).join(", ")
+          : "None";
 
       const eventStatus = [
         `Messages: ${events.messages ? "✅" : "❌"}`,
@@ -2130,7 +2137,9 @@ client.on("interactionCreate", async (interaction) => {
           `📊 **Tracking Status for ${interaction.guild.name}**\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
           `🔘 **Status:** ${enabled ? "✅ Enabled" : "❌ Disabled"}\n` +
-          `📢 **Log Channel:** ${channel ? `${channel}` : "❌ Not set (logs to console)"}\n` +
+          `📢 **Log Channel:** ${
+            channel ? `${channel}` : "❌ Not set (logs to console)"
+          }\n` +
           `🚫 **Ignored Channels:** ${ignoredChannelsStr}\n\n` +
           `📋 **Event Types:**\n${eventStatus}`,
         ephemeral: true,
@@ -2223,7 +2232,8 @@ client.on("interactionCreate", async (interaction) => {
 
       if (!updatedAny) {
         await interaction.reply({
-          content: "❌ No event options were provided. Use `/tracking events` with at least one option.",
+          content:
+            "❌ No event options were provided. Use `/tracking events` with at least one option.",
           ephemeral: true,
         });
         return;
@@ -2233,7 +2243,9 @@ client.on("interactionCreate", async (interaction) => {
       saveTrackingData(guildId);
 
       await interaction.reply({
-        content: `✅ Tracking event preferences updated:\n${changes.map(c => `• ${c}`).join("\n")}`,
+        content: `✅ Tracking event preferences updated:\n${changes
+          .map((c) => `• ${c}`)
+          .join("\n")}`,
         ephemeral: true,
       });
 
@@ -2555,7 +2567,13 @@ client.on("messageDelete", async (message) => {
     message.author,
     0xe74c3c
   );
-  await logTrackingEvent(message.guild.id, null, embed, "message", message.channel.id);
+  await logTrackingEvent(
+    message.guild.id,
+    null,
+    embed,
+    "message",
+    message.channel.id
+  );
 });
 
 // Track bulk message deletions
@@ -2589,7 +2607,13 @@ client.on("messageUpdate", async (oldMessage, newMessage) => {
     newMessage.author,
     0xf39c12
   );
-  await logTrackingEvent(newMessage.guild.id, null, embed, "message", newMessage.channel.id);
+  await logTrackingEvent(
+    newMessage.guild.id,
+    null,
+    embed,
+    "message",
+    newMessage.channel.id
+  );
 });
 
 // Track members joining
@@ -2600,7 +2624,10 @@ client.on("guildMemberAdd", async (member) => {
       Date.now() / 1000
     )}:F>`,
     member.user,
+    0x2ecc71
+  );
   await logTrackingEvent(member.guild.id, null, embed, "member", null);
+});
 
 // Track members leaving
 client.on("guildMemberRemove", async (member) => {
@@ -2745,7 +2772,13 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
       member.user,
       0x3498db
     );
-    await logTrackingEvent(newState.guild.id, null, embed, "voice", newState.channel.id);
+    await logTrackingEvent(
+      newState.guild.id,
+      null,
+      embed,
+      "voice",
+      newState.channel.id
+    );
   } else if (oldState.channel && !newState.channel) {
     const embed = createTrackingEmbed(
       "🔇 Voice Channel Left",
@@ -2753,7 +2786,13 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
       member.user,
       0x95a5a6
     );
-    await logTrackingEvent(oldState.guild.id, null, embed, "voice", oldState.channel.id);
+    await logTrackingEvent(
+      oldState.guild.id,
+      null,
+      embed,
+      "voice",
+      oldState.channel.id
+    );
   } else if (
     oldState.channel &&
     newState.channel &&
@@ -2765,7 +2804,13 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
       member.user,
       0xf39c12
     );
-    await logTrackingEvent(newState.guild.id, null, embed, "voice", newState.channel.id);
+    await logTrackingEvent(
+      newState.guild.id,
+      null,
+      embed,
+      "voice",
+      newState.channel.id
+    );
   }
 
   // Track mute/unmute
@@ -2776,7 +2821,13 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
       member.user,
       newState.serverMute ? 0xe74c3c : 0x2ecc71
     );
-    await logTrackingEvent(newState.guild.id, null, embed, "voice", newState.channel?.id || null);
+    await logTrackingEvent(
+      newState.guild.id,
+      null,
+      embed,
+      "voice",
+      newState.channel?.id || null
+    );
   }
 
   if (oldState.serverDeaf !== newState.serverDeaf) {
@@ -2786,7 +2837,13 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
       member.user,
       newState.serverDeaf ? 0xe74c3c : 0x2ecc71
     );
-    await logTrackingEvent(newState.guild.id, null, embed, "voice", newState.channel?.id || null);
+    await logTrackingEvent(
+      newState.guild.id,
+      null,
+      embed,
+      "voice",
+      newState.channel?.id || null
+    );
   }
 });
 
@@ -2807,7 +2864,13 @@ client.on("messageReactionAdd", async (reaction, user) => {
     user,
     0x3498db
   );
-  await logTrackingEvent(reaction.message.guild.id, null, embed, "reaction", reaction.message.channel.id);
+  await logTrackingEvent(
+    reaction.message.guild.id,
+    null,
+    embed,
+    "reaction",
+    reaction.message.channel.id
+  );
 });
 
 client.on("messageReactionRemove", async (reaction, user) => {
@@ -2826,7 +2889,13 @@ client.on("messageReactionRemove", async (reaction, user) => {
     user,
     0x95a5a6
   );
-  await logTrackingEvent(reaction.message.guild.id, null, embed, "reaction", reaction.message.channel.id);
+  await logTrackingEvent(
+    reaction.message.guild.id,
+    null,
+    embed,
+    "reaction",
+    reaction.message.channel.id
+  );
 });
 
 // Track channel creation
