@@ -9,7 +9,7 @@ import dotenv from "dotenv";
 import { exec } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import TwitchAPI from "./twitch-api.js";
 
 dotenv.config();
@@ -66,7 +66,21 @@ let twitchAPI = null;
 const twitchStreamers = new Map(); // Map<guildId, Set<streamerUsername>>
 const twitchNotificationChannels = new Map(); // Map<guildId, channelId>
 const twitchStreamStatus = new Map(); // Map<streamerUsername, isLive>
-const TWITCH_DATA_FILE = join(__dirname, "twitch-data.json");
+
+// Persistent data directory - use Railway volume if available, otherwise local
+const DATA_DIR =
+  process.env.RAILWAY_VOLUME_MOUNT_PATH || join(__dirname, "..", "data");
+const TWITCH_DATA_FILE = join(DATA_DIR, "twitch-data.json");
+
+// Ensure data directory exists
+if (!existsSync(DATA_DIR)) {
+  try {
+    mkdirSync(DATA_DIR, { recursive: true });
+    console.log(`✅ Created data directory: ${DATA_DIR}`);
+  } catch (error) {
+    console.error(`❌ Failed to create data directory: ${error.message}`);
+  }
+}
 
 // Load Twitch data from file
 function loadTwitchData() {
@@ -89,16 +103,21 @@ function loadTwitchData() {
 
 // Save Twitch data to file
 function saveTwitchData() {
-  const data = {
-    streamers: Object.fromEntries(
-      Array.from(twitchStreamers.entries()).map(([guildId, streamers]) => [
-        guildId,
-        Array.from(streamers),
-      ])
-    ),
-    channels: Object.fromEntries(twitchNotificationChannels),
-  };
-  writeFileSync(TWITCH_DATA_FILE, JSON.stringify(data, null, 2));
+  try {
+    const data = {
+      streamers: Object.fromEntries(
+        Array.from(twitchStreamers.entries()).map(([guildId, streamers]) => [
+          guildId,
+          Array.from(streamers),
+        ])
+      ),
+      channels: Object.fromEntries(twitchNotificationChannels),
+    };
+    writeFileSync(TWITCH_DATA_FILE, JSON.stringify(data, null, 2));
+    console.log(`✅ Saved Twitch configuration to ${TWITCH_DATA_FILE}`);
+  } catch (error) {
+    console.error(`❌ Failed to save Twitch data: ${error.message}`);
+  }
 }
 
 // Moderator role names that can use moderation commands (customize as needed)

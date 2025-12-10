@@ -291,6 +291,14 @@ git push heroku main
 1. Sign up for a [Railway](https://railway.app) account
 2. Connect your GitHub repository
 3. Set environment variables: `DISCORD_TOKEN`, `CLIENT_ID`, `GUILD_ID`
+4. **Configure Volume for Persistent Data** (required for Twitch notifications):
+   - Press `Ctrl+K` (or `⌘K` on Mac) to open Command Palette
+   - Type "volume" and select **"Create Volume"**
+   - Choose your bot service
+   - Set mount path to: `/data`
+   - Railway will auto-redeploy with the volume attached
+
+**Note**: The volume ensures Twitch streamer notifications persist across deployments. Without it, the bot will work but Twitch configuration will be lost on each redeploy. See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for detailed instructions.
 
 ### Option 3: Render
 
