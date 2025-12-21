@@ -836,6 +836,85 @@ const commands = [
           .setRequired(false)
       )
   ),
+  // Translation commands
+  makeGuildOnly(
+    new SlashCommandBuilder()
+      .setName("translate-setup")
+      .setDescription("Enable auto-translation for a channel")
+      .addChannelOption((option) =>
+        option
+          .setName("channel")
+          .setDescription("Channel to enable auto-translation in")
+          .setRequired(true)
+      )
+      .addStringOption((option) =>
+        option
+          .setName("target-language")
+          .setDescription("Target language code (e.g., en, es, de, fr, ja)")
+          .setRequired(false)
+      )
+  ),
+  makeGuildOnly(
+    new SlashCommandBuilder()
+      .setName("translate-config")
+      .setDescription("Configure translation settings for this server")
+      .addStringOption((option) =>
+        option
+          .setName("display-mode")
+          .setDescription("How to display translations")
+          .setRequired(true)
+          .addChoices(
+            { name: "Reply to message", value: "reply" },
+            { name: "Embed", value: "embed" },
+            { name: "Thread", value: "thread" }
+          )
+      )
+      .addStringOption((option) =>
+        option
+          .setName("default-language")
+          .setDescription("Default target language (e.g., en, es, de, fr)")
+          .setRequired(false)
+      )
+  ),
+  makeGuildOnly(
+    new SlashCommandBuilder()
+      .setName("translate-disable")
+      .setDescription("Disable auto-translation for a channel")
+      .addChannelOption((option) =>
+        option
+          .setName("channel")
+          .setDescription("Channel to disable auto-translation in")
+          .setRequired(true)
+      )
+  ),
+  makeGuildOnly(
+    new SlashCommandBuilder()
+      .setName("translate-list")
+      .setDescription("List all channels with auto-translation enabled")
+  ),
+  makeUserInstallable(
+    new SlashCommandBuilder()
+      .setName("translate")
+      .setDescription("Manually translate text")
+      .addStringOption((option) =>
+        option
+          .setName("text")
+          .setDescription("Text to translate")
+          .setRequired(true)
+      )
+      .addStringOption((option) =>
+        option
+          .setName("to")
+          .setDescription("Target language (e.g., en, es, de, fr, ja)")
+          .setRequired(false)
+      )
+      .addStringOption((option) =>
+        option
+          .setName("from")
+          .setDescription("Source language (auto-detect if not specified)")
+          .setRequired(false)
+      )
+  ),
   // Role info command (duplicate prevention - using roleinfo for consistency)
   // Skip adding another role-info
 ];

@@ -19,6 +19,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@iamtraction/google-translate": "^2.0.1",
     "@railway/cli": "^4.12.0",
     "axios": "^1.13.2",
     "discord.js": "^14.25.1",

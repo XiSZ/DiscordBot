@@ -10,6 +10,8 @@ This bot automatically helps you maintain your Discord Active Developer Badge el
 - 🔄 Automatic reconnection mechanism
 - 💬 Works in servers, DMs, and group DMs
 - 👤 **User App Support** - Install once, use anywhere (servers, DMs, group DMs)
+- 🌐 **Auto-Translation** - Automatically translate messages in configured channels (100+ languages)
+- 🆓 **Free Translation** - Powered by Google Translate, no API key required
 
 ## Why do you need this bot?
 
@@ -234,6 +236,44 @@ The setup guide (`invite-bot.html`) is automatically generated from your `.env` 
   - **Note**: Reminder is sent via DM after the specified time
 - `/invite` - Get the bot invite link to add it to other servers
   - Shows a generated invite URL with all necessary permissions
+
+### Translation Commands
+
+- `/translate <text> [to] [from]` - Manually translate text to another language
+  - `text` (required): Text to translate
+  - `to` (optional): Target language code (default: en)
+  - `from` (optional): Source language code (auto-detect if not specified)
+  - **Common language codes**: en (English), es (Spanish), de (German), fr (French), it (Italian), ja (Japanese), ko (Korean), zh-CN (Chinese), pt (Portuguese), ru (Russian)
+  - **Powered by**: Google Translate (free, no API key needed)
+  - **Works in**: Servers, DMs, and Group DMs 💬
+- `/translate-setup <channel> [target-language]` - Enable auto-translation for a specific channel
+  - `channel` (required): Channel to enable auto-translation in
+  - `target-language` (optional): Target language code (default: en)
+  - **How it works**: Bot will automatically detect and translate non-English messages in the configured channel
+  - **Permissions Required**: Manage Server
+- `/translate-config <display-mode> [default-language]` - Configure how translations are displayed
+  - `display-mode` (required): Choose how translations appear
+    - `reply` - Reply to the original message with translation
+    - `embed` - Send translation in a formatted embed
+    - `thread` - Create a thread for the translation
+  - `default-language` (optional): Set the default target language for all translations
+  - **Permissions Required**: Manage Server
+- `/translate-disable <channel>` - Disable auto-translation for a channel
+  - `channel` (required): Channel to disable auto-translation in
+  - **Permissions Required**: Manage Server
+- `/translate-list` - View all channels with auto-translation enabled
+  - Shows current translation settings (display mode, target language)
+  - Lists all enabled channels
+  - **Permissions Required**: Manage Server
+
+**Translation Features:**
+
+- 🌐 **Auto-Translation**: Automatically detects and translates non-English messages in configured channels
+- 🎨 **Customizable Display**: Choose between reply, embed, or thread format
+- 🔧 **Per-Channel Configuration**: Enable translation only in specific channels
+- 💬 **Manual Translation**: Use `/translate` anywhere (servers, DMs, group DMs)
+- 🆓 **Free Service**: Powered by Google Translate with no API key required
+- 🗣️ **100+ Languages**: Supports all major languages
 
 ### Logging & Monitoring Commands
 
