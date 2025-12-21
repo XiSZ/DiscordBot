@@ -192,7 +192,10 @@ const commands = [
       .setName("unmute")
       .setDescription("Unmute a user")
       .addUserOption((option) =>
-        option.setName("user").setDescription("User to unmute").setRequired(true)
+        option
+          .setName("user")
+          .setDescription("User to unmute")
+          .setRequired(true)
       )
   ),
   // Warn command
@@ -240,7 +243,10 @@ const commands = [
           .setRequired(true)
       )
       .addStringOption((option) =>
-        option.setName("option1").setDescription("First option").setRequired(true)
+        option
+          .setName("option1")
+          .setDescription("First option")
+          .setRequired(true)
       )
       .addStringOption((option) =>
         option
@@ -342,7 +348,10 @@ const commands = [
       .setName("notify")
       .setDescription("Send a DM notification to a user")
       .addUserOption((option) =>
-        option.setName("user").setDescription("User to notify").setRequired(true)
+        option
+          .setName("user")
+          .setDescription("User to notify")
+          .setRequired(true)
       )
       .addStringOption((option) =>
         option
@@ -494,7 +503,9 @@ const commands = [
           .addBooleanOption((option) =>
             option
               .setName("channel-updates")
-              .setDescription("Track channel updates (name, topic, permissions)")
+              .setDescription(
+                "Track channel updates (name, topic, permissions)"
+              )
               .setRequired(false)
           )
           .addBooleanOption((option) =>
@@ -538,7 +549,9 @@ const commands = [
           .addBooleanOption((option) =>
             option
               .setName("integrations")
-              .setDescription("Track integration events (create, update, delete)")
+              .setDescription(
+                "Track integration events (create, update, delete)"
+              )
               .setRequired(false)
           )
           .addBooleanOption((option) =>
@@ -657,9 +670,7 @@ const commands = [
   ),
   // Flip command
   makeUserInstallable(
-    new SlashCommandBuilder()
-      .setName("flip")
-      .setDescription("Flip a coin")
+    new SlashCommandBuilder().setName("flip").setDescription("Flip a coin")
   ),
   // Quote command
   makeUserInstallable(
@@ -697,7 +708,10 @@ const commands = [
           .setRequired(true)
       )
       .addRoleOption((option) =>
-        option.setName("role").setDescription("Role to assign").setRequired(true)
+        option
+          .setName("role")
+          .setDescription("Role to assign")
+          .setRequired(true)
       )
   ),
   // Role remove command
@@ -712,7 +726,10 @@ const commands = [
           .setRequired(true)
       )
       .addRoleOption((option) =>
-        option.setName("role").setDescription("Role to remove").setRequired(true)
+        option
+          .setName("role")
+          .setDescription("Role to remove")
+          .setRequired(true)
       )
   ),
   // Channel create command
@@ -746,21 +763,22 @@ const commands = [
       )
   ),
   // Welcome command
-  new SlashCommandBuilder()
-    .setName("welcome")
-    .setDescription("Set welcome message and channel")
-    .addChannelOption((option) =>
-      option
-        .setName("channel")
-        .setDescription("Channel for welcome messages")
-        .setRequired(true)
-    )
-    .addStringOption((option) =>
-      option
-        .setName("message")
-        .setDescription("Welcome message text")
-        .setRequired(true)
-    )
+  makeGuildOnly(
+    new SlashCommandBuilder()
+      .setName("welcome")
+      .setDescription("Set welcome message and channel")
+      .addChannelOption((option) =>
+        option
+          .setName("channel")
+          .setDescription("Channel for welcome messages")
+          .setRequired(true)
+      )
+      .addStringOption((option) =>
+        option
+          .setName("message")
+          .setDescription("Welcome message text")
+          .setRequired(true)
+      )
   ),
   // Settings command
   makeGuildOnly(
@@ -768,7 +786,9 @@ const commands = [
       .setName("settings")
       .setDescription("View or configure bot settings for the server")
       .addSubcommand((subcommand) =>
-        subcommand.setName("view").setDescription("View current server settings")
+        subcommand
+          .setName("view")
+          .setDescription("View current server settings")
       )
   ),
   // Announce command
@@ -785,7 +805,9 @@ const commands = [
       .addChannelOption((option) =>
         option
           .setName("channel")
-          .setDescription("Channel to send announcement to (defaults to current)")
+          .setDescription(
+            "Channel to send announcement to (defaults to current)"
+          )
           .setRequired(false)
       )
   ),
