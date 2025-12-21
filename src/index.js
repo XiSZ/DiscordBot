@@ -18,6 +18,12 @@ import {
 } from "fs";
 import TwitchAPI from "./twitch-api.js";
 import emojiRegex from "emoji-regex";
+import {
+  logger,
+  fileOps,
+  logConfigurationStatus,
+  saveConfigFile,
+} from "./utils.js";
 
 dotenv.config();
 
@@ -83,22 +89,22 @@ const DATA_DIR =
 const SERVERS_DIR = join(DATA_DIR, "servers");
 
 // Ensure data directory exists
-if (!existsSync(DATA_DIR)) {
+if (!fileOps.exists(DATA_DIR)) {
   try {
     mkdirSync(DATA_DIR, { recursive: true });
-    console.log(`✅ Created data directory: ${DATA_DIR}`);
+    logger.success(`Created data directory: ${DATA_DIR}`);
   } catch (error) {
-    console.error(`❌ Failed to create data directory: ${error.message}`);
+    logger.error(`Failed to create data directory: ${error.message}`);
   }
 }
 
 // Ensure servers directory exists
-if (!existsSync(SERVERS_DIR)) {
+if (!fileOps.exists(SERVERS_DIR)) {
   try {
     mkdirSync(SERVERS_DIR, { recursive: true });
-    console.log(`✅ Created servers directory: ${SERVERS_DIR}`);
+    logger.success(`Created servers directory: ${SERVERS_DIR}`);
   } catch (error) {
-    console.error(`❌ Failed to create servers directory: ${error.message}`);
+    logger.error(`Failed to create servers directory: ${error.message}`);
   }
 }
 
@@ -110,13 +116,12 @@ function getServerConfigPath(guildId) {
 // Ensure server directory exists
 function ensureServerDirectory(guildId) {
   const serverDir = join(SERVERS_DIR, guildId);
-  if (!existsSync(serverDir)) {
+  if (!fileOps.exists(serverDir)) {
     try {
       mkdirSync(serverDir, { recursive: true });
     } catch (error) {
-      console.error(
-        `❌ Failed to create server directory for ${guildId}:`,
-        error.message
+      logger.error(
+        `Failed to create server directory for ${guildId}: ${error.message}`
       );
     }
   }
@@ -135,49 +140,32 @@ function loadTwitchData() {
 
     serverDirs.forEach((guildId) => {
       const configPath = getServerConfigPath(guildId);
-      if (existsSync(configPath)) {
+      if (fileOps.exists(configPath)) {
         try {
-          const data = JSON.parse(readFileSync(configPath, "utf-8"));
-          if (data.streamers) {
-            twitchStreamers.set(guildId, new Set(data.streamers));
-          }
-          if (data.channelId) {
-            twitchNotificationChannels.set(guildId, data.channelId);
-          }
+          const data = fileOps.readJSON(configPath);
+          if (data) {
+            if (data.streamers) {
+              twitchStreamers.set(guildId, new Set(data.streamers));
+            }
+            if (data.channelId) {
+              twitchNotificationChannels.set(guildId, data.channelId);
+            }
 
-          // Get server name if available
-          const guild = client.guilds.cache.get(guildId);
-          const serverName = guild?.name || guildId;
-          const joinDate =
-            guild?.joinedAt?.toLocaleString("en-GB", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: false,
-            }) || "Unknown";
-          loadedServers.push(`${guildId} - ${serverName} - ${joinDate}`);
-          loadedCount++;
+            // Get server info
+            loadedServers.push(formatServerInfo(guildId));
+            loadedCount++;
+          }
         } catch (error) {
-          console.error(
-            `❌ Error loading config for guild ${guildId}:`,
-            error.message
+          logger.error(
+            `Error loading config for guild ${guildId}: ${error.message}`
           );
         }
       }
     });
 
-    if (loadedCount > 0) {
-      console.log(
-        `✅ Loaded Twitch configuration for ${loadedCount} server(s):\n   ${loadedServers.join(
-          "\n   "
-        )}`
-      );
-    }
+    logConfigurationStatus("Twitch configuration", loadedCount, loadedServers);
   } catch (error) {
-    console.error("❌ Error loading Twitch data:", error);
+    logger.error(`Error loading Twitch data: ${error.message}`);
   }
 }
 
@@ -192,11 +180,10 @@ function saveTwitchData(guildId) {
       channelId: twitchNotificationChannels.get(guildId) || null,
     };
 
-    writeFileSync(configPath, JSON.stringify(data, null, 2));
-    console.log(`✅ Saved Twitch configuration for server ${guildId}`);
+    saveConfigFile(configPath, data, "Twitch configuration", guildId);
   } catch (error) {
-    console.error(
-      `❌ Failed to save Twitch data for server ${guildId}: ${error.message}`
+    logger.error(
+      `Failed to save Twitch data for server ${guildId}: ${error.message}`
     );
   }
 }
@@ -214,18 +201,17 @@ function saveTranslationConfig(guildId) {
       targetLanguage: config?.targetLanguage || "en",
     };
 
-    writeFileSync(configPath, JSON.stringify(data, null, 2));
-    console.log(`✅ Saved translation configuration for server ${guildId}`);
+    saveConfigFile(configPath, data, "translation configuration", guildId);
   } catch (error) {
-    console.error(
-      `❌ Failed to save translation config for server ${guildId}: ${error.message}`
+    logger.error(
+      `Failed to save translation config for server ${guildId}: ${error.message}`
     );
   }
 }
 
 // Load translation data from all server config files
 function loadTranslationData() {
-  if (!existsSync(SERVERS_DIR)) {
+  if (!fileOps.exists(SERVERS_DIR)) {
     return;
   }
 
@@ -239,45 +225,33 @@ function loadTranslationData() {
 
       if (existsSync(configPath)) {
         try {
-          const data = JSON.parse(readFileSync(configPath, "utf8"));
-          translationConfig.set(guildId, {
-            channels: new Set(data.channels || []),
-            displayMode: data.displayMode || "reply",
-            targetLanguage: data.targetLanguage || "en",
-          });
+          const data = fileOps.readJSON(configPath);
+          if (data) {
+            translationConfig.set(guildId, {
+              channels: new Set(data.channels || []),
+              displayMode: data.displayMode || "reply",
+              targetLanguage: data.targetLanguage || "en",
+            });
 
-          // Get server name if available
-          const guild = client.guilds.cache.get(guildId);
-          const serverName = guild?.name || guildId;
-          const joinDate =
-            guild?.joinedAt?.toLocaleString("en-GB", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: false,
-            }) || "Unknown";
-          loadedServers.push(`${guildId} - ${serverName} - ${joinDate}`);
-          loadedCount++;
+            // Get server info
+            loadedServers.push(formatServerInfo(guildId));
+            loadedCount++;
+          }
         } catch (error) {
-          console.error(
-            `❌ Failed to parse translation config for server ${guildId}: ${error.message}`
+          logger.error(
+            `Failed to parse translation config for server ${guildId}: ${error.message}`
           );
         }
       }
     }
 
-    if (loadedCount > 0) {
-      console.log(
-        `✅ Loaded translation configurations for ${loadedCount} server(s):\n   ${loadedServers.join(
-          "\n   "
-        )}`
-      );
-    }
+    logConfigurationStatus(
+      "translation configurations",
+      loadedCount,
+      loadedServers
+    );
   } catch (error) {
-    console.error(`❌ Failed to load translation data: ${error.message}`);
+    logger.error(`Failed to load translation data: ${error.message}`);
   }
 }
 
@@ -460,7 +434,7 @@ function getTrackingConfigPath(guildId) {
 
 // Load tracking data from all server config files
 function loadTrackingData() {
-  if (!existsSync(SERVERS_DIR)) {
+  if (!fileOps.exists(SERVERS_DIR)) {
     return;
   }
 
@@ -471,10 +445,13 @@ function loadTrackingData() {
 
     serverDirs.forEach((guildId) => {
       const configPath = getTrackingConfigPath(guildId);
-      if (existsSync(configPath)) {
+      if (fileOps.exists(configPath)) {
         try {
-          const data = JSON.parse(readFileSync(configPath, "utf-8"));
-          if (data.enabled !== undefined || data.channelId !== undefined) {
+          const data = fileOps.readJSON(configPath);
+          if (
+            data &&
+            (data.enabled !== undefined || data.channelId !== undefined)
+          ) {
             trackingConfig.set(guildId, {
               enabled: data.enabled || false,
               channelId: data.channelId || null,
@@ -501,20 +478,8 @@ function loadTrackingData() {
               },
             });
 
-            // Get server name if available
-            const guild = client.guilds.cache.get(guildId);
-            const serverName = guild?.name || guildId;
-            const joinDate =
-              guild?.joinedAt?.toLocaleString("en-GB", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false,
-              }) || "Unknown";
-            loadedServers.push(`${guildId} - ${serverName} - ${joinDate}`);
+            // Get server info
+            loadedServers.push(formatServerInfo(guildId));
             loadedCount++;
           }
         } catch (error) {
@@ -526,15 +491,13 @@ function loadTrackingData() {
       }
     });
 
-    if (loadedCount > 0) {
-      console.log(
-        `✅ Loaded tracking configuration for ${loadedCount} server(s):\n   ${loadedServers.join(
-          "\n   "
-        )}`
-      );
-    }
+    logConfigurationStatus(
+      "tracking configuration",
+      loadedCount,
+      loadedServers
+    );
   } catch (error) {
-    console.error("❌ Error loading tracking data:", error);
+    logger.error(`Error loading tracking data: ${error.message}`);
   }
 }
 
@@ -571,11 +534,10 @@ function saveTrackingData(guildId) {
       },
     };
 
-    writeFileSync(configPath, JSON.stringify(data, null, 2));
-    console.log(`✅ Saved tracking configuration for server ${guildId}`);
+    saveConfigFile(configPath, data, "tracking configuration", guildId);
   } catch (error) {
-    console.error(
-      `❌ Failed to save tracking data for server ${guildId}: ${error.message}`
+    logger.error(
+      `Failed to save tracking config for server ${guildId}: ${error.message}`
     );
   }
 }
@@ -1096,31 +1058,21 @@ function requiresGuild(interaction, commandName) {
 }
 
 client.once("clientReady", () => {
-  console.log("✅ Bot is online!");
-  console.log(`🤖 Logged in as: ${client.user.tag}`);
+  logger.success("Bot is online!");
+  logger.log(`🤖 Logged in as: ${client.user.tag}`);
 
-  const serverList = client.guilds.cache.map((guild) => {
-    const joinDate =
-      guild?.joinedAt?.toLocaleString("en-GB", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-      }) || "Unknown";
-    return `${guild.id} - ${guild.name} - ${joinDate}`;
-  });
+  const serverList = client.guilds.cache.map((guild) =>
+    formatServerInfo(guild.id)
+  );
 
-  console.log(`📊 Joined ${client.guilds.cache.size} server(s):`);
+  logger.log(`📊 Joined ${client.guilds.cache.size} server(s):`);
   if (serverList.length > 0) {
-    console.log(`   ${serverList.join("\n   ")}`);
+    logger.log(`   ${serverList.join("\n   ")}`);
   }
 
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("🎯 Discord Active Developer Badge Auto-Maintenance Bot");
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  logger.divider();
+  logger.log("🎯 Discord Active Developer Badge Auto-Maintenance Bot");
+  logger.divider();
 
   // Increase max listeners to prevent memory leak warnings
   client.setMaxListeners(20);
@@ -1157,9 +1109,9 @@ client.once("clientReady", () => {
   // Setup auto-execution schedule
   if (autoExecutionEnabled) {
     setupAutoExecution();
-    console.log("✅ Auto-execution is enabled");
+    logger.success("Auto-execution is enabled");
   } else {
-    console.log("⏸️  Auto-execution is disabled (ENABLE_AUTO_EXECUTION=false)");
+    logger.log("⏸️  Auto-execution is disabled (ENABLE_AUTO_EXECUTION=false)");
   }
 });
 
