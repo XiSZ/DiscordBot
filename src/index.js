@@ -160,7 +160,9 @@ function loadTwitchData() {
     });
 
     if (loadedCount > 0) {
-      console.log(`✅ Loaded Twitch configuration for ${loadedCount} server(s)`);
+      console.log(
+        `✅ Loaded Twitch configuration for ${loadedCount} server(s)`
+      );
     }
   } catch (error) {
     console.error("❌ Error loading Twitch data:", error);
@@ -235,7 +237,16 @@ function loadTranslationData() {
           // Get server name if available
           const guild = client.guilds.cache.get(guildId);
           const serverName = guild?.name || guildId;
-          const joinDate = guild?.joinedAt?.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }'en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) || "Unknown";
+          const joinDate =
+            guild?.joinedAt?.toLocaleString("en-GB", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false,
+            }) || "Unknown";
           loadedServers.push(`${guildId} - ${serverName} - ${joinDate}`);
           loadedCount++;
         } catch (error) {
@@ -481,7 +492,16 @@ function loadTrackingData() {
             // Get server name if available
             const guild = client.guilds.cache.get(guildId);
             const serverName = guild?.name || guildId;
-            const joinDate = guild?.joinedAt?.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) || "Unknown";
+            const joinDate =
+              guild?.joinedAt?.toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }) || "Unknown";
             loadedServers.push(`${guildId} - ${serverName} - ${joinDate}`);
             loadedCount++;
           }
@@ -495,7 +515,9 @@ function loadTrackingData() {
     });
 
     if (loadedCount > 0) {
-      console.log(`✅ Loaded tracking configuration for ${loadedCount} server(s)`);
+      console.log(
+        `✅ Loaded tracking configuration for ${loadedCount} server(s)`
+      );
     }
   } catch (error) {
     console.error("❌ Error loading tracking data:", error);
