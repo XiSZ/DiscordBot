@@ -8,8 +8,8 @@ function makeUserInstallable(command) {
   const commandJSON = command.toJSON();
   // Add integration types: 0 = Guild Install, 1 = User Install
   commandJSON.integration_types = [0, 1];
-  // Add contexts: 0 = Guild, 1 = Bot DM, 2 = Group DM, 3 = Private Channel
-  commandJSON.contexts = [0, 1, 2, 3];
+  // Add contexts: 0 = Guild, 1 = Bot DM, 2 = Group DM
+  commandJSON.contexts = [0, 1, 2];
   return commandJSON;
 }
 
