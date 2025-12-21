@@ -1074,7 +1074,7 @@ function requiresGuild(interaction, commandName) {
   return false;
 }
 
-client.once("clientReady", () => {
+client.once("ready", () => {
   logger.success("Bot is online!");
   logger.log(`🤖 Logged in as: ${client.user.tag}`);
 
