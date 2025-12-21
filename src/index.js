@@ -148,7 +148,17 @@ function loadTwitchData() {
           // Get server name if available
           const guild = client.guilds.cache.get(guildId);
           const serverName = guild?.name || guildId;
-          loadedServers.push(`${guildId} - ${serverName}`);
+          const joinDate =
+            guild?.joinedAt?.toLocaleString("en-GB", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false,
+            }) || "Unknown";
+          loadedServers.push(`${guildId} - ${serverName} - ${joinDate}`);
           loadedCount++;
         } catch (error) {
           console.error(
@@ -161,7 +171,9 @@ function loadTwitchData() {
 
     if (loadedCount > 0) {
       console.log(
-        `✅ Loaded Twitch configuration for ${loadedCount} server(s)`
+        `✅ Loaded Twitch configuration for ${loadedCount} server(s):\n   ${loadedServers.join(
+          "\n   "
+        )}`
       );
     }
   } catch (error) {
@@ -516,7 +528,9 @@ function loadTrackingData() {
 
     if (loadedCount > 0) {
       console.log(
-        `✅ Loaded tracking configuration for ${loadedCount} server(s)`
+        `✅ Loaded tracking configuration for ${loadedCount} server(s):\n   ${loadedServers.join(
+          "\n   "
+        )}`
       );
     }
   } catch (error) {
@@ -1084,7 +1098,26 @@ function requiresGuild(interaction, commandName) {
 client.once("clientReady", () => {
   console.log("✅ Bot is online!");
   console.log(`🤖 Logged in as: ${client.user.tag}`);
-  console.log(`📊 Joined ${client.guilds.cache.size} server(s)`);
+
+  const serverList = client.guilds.cache.map((guild) => {
+    const joinDate =
+      guild?.joinedAt?.toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }) || "Unknown";
+    return `${guild.id} - ${guild.name} - ${joinDate}`;
+  });
+
+  console.log(`📊 Joined ${client.guilds.cache.size} server(s):`);
+  if (serverList.length > 0) {
+    console.log(`   ${serverList.join("\n   ")}`);
+  }
+
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("🎯 Discord Active Developer Badge Auto-Maintenance Bot");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
