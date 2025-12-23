@@ -81,7 +81,7 @@ const twitchNotificationChannels = new Map(); // Map<guildId, channelId>
 const twitchStreamStatus = new Map(); // Map<streamerUsername, isLive>
 
 // Translation configuration per guild
-const translationConfig = new Map(); // Map<guildId, { channels: Set<channelId>, displayMode: string, targetLanguage: string }>
+const translationConfig = new Map(); // Map<guildId, { channels: Set<channelId>, displayMode: string, targetLanguage: string, outputChannelId: string }>
 
 // Persistent data directory - use Railway volume if available, otherwise local
 const DATA_DIR =
@@ -199,6 +199,7 @@ function saveTranslationConfig(guildId) {
       channels: Array.from(config?.channels || []),
       displayMode: config?.displayMode || "reply",
       targetLanguage: config?.targetLanguage || "en",
+      outputChannelId: config?.outputChannelId || null,
     };
 
     saveConfigFile(configPath, data, "translation configuration", guildId);
@@ -231,6 +232,7 @@ function loadTranslationData() {
               channels: new Set(data.channels || []),
               displayMode: data.displayMode || "reply",
               targetLanguage: data.targetLanguage || "en",
+              outputChannelId: data.outputChannelId || null,
             });
 
             // Get server info
@@ -262,6 +264,7 @@ function ensureTranslationConfig(guildId) {
       channels: new Set(),
       displayMode: "reply",
       targetLanguage: "en",
+      outputChannelId: null,
     });
   }
   return translationConfig.get(guildId);
@@ -281,6 +284,11 @@ function getTranslationDisplayMode(guildId) {
 // Helper: get translation target language
 function getTranslationTargetLanguage(guildId) {
   return translationConfig.get(guildId)?.targetLanguage || "en";
+}
+
+// Helper: get translation output channel
+function getTranslationOutputChannel(guildId) {
+  return translationConfig.get(guildId)?.outputChannelId || null;
 }
 
 // Helper: get human-readable language name from ISO code
@@ -1196,6 +1204,7 @@ client.on("interactionCreate", async (interaction) => {
         `\`/translate <text> [to] [from]\` 💬 – Translate text\n` +
         `\`/translate-setup <channel>\` – Enable auto-translation\n` +
         `\`/translate-config <display-mode>\` – Configure translation\n` +
+        `\`/translate-output-channel <channel>\` – Set output channel for translations\n` +
         `\`/translate-disable <channel>\` – Disable auto-translation\n` +
         `\`/translate-list\` – View enabled channels\n` +
         `\`/translate-status\` – View translation settings\n` +
@@ -3447,6 +3456,30 @@ client.on("interactionCreate", async (interaction) => {
     );
   }
 
+  // Translate output channel command
+  if (interaction.commandName === "translate-output-channel") {
+    if (requiresGuild(interaction, "translate-output-channel")) return;
+
+    const outputChannel = interaction.options.getChannel("channel");
+    const guildId = interaction.guild.id;
+
+    // Ensure config exists
+    const config = ensureTranslationConfig(guildId);
+    config.outputChannelId = outputChannel.id;
+
+    // Save configuration
+    saveTranslationConfig(guildId);
+
+    await interaction.reply({
+      content: `✅ Translation output channel set to ${outputChannel}\n💡 All translations from enabled channels will be sent here.`,
+      ephemeral: true,
+    });
+
+    console.log(
+      `🌐 ${interaction.user.tag} set translation output channel to ${outputChannel.name} (${guildId})`
+    );
+  }
+
   // Translate disable command
   if (interaction.commandName === "translate-disable") {
     if (requiresGuild(interaction, "translate-disable")) return;
@@ -3495,12 +3528,17 @@ client.on("interactionCreate", async (interaction) => {
       .map((id) => `• <#${id}>`)
       .join("\n");
 
+    const outputChannel = config.outputChannelId
+      ? `<#${config.outputChannelId}>`
+      : "(same as source channels)";
+
     await interaction.reply({
       content:
         `📋 **Auto-Translation Enabled Channels:**\n${channelList}\n\n` +
         `⚙️ **Settings:**\n` +
         `📤 Display mode: **${config.displayMode}**\n` +
-        `🌐 Target language: **${config.targetLanguage.toUpperCase()}**`,
+        `🌐 Target language: **${config.targetLanguage.toUpperCase()}**\n` +
+        `📍 Output channel: **${outputChannel}**`,
       ephemeral: true,
     });
   }
@@ -3518,6 +3556,10 @@ client.on("interactionCreate", async (interaction) => {
         ? channelList.map((id) => `• <#${id}>`).join("\n")
         : "(none)";
 
+    const outputChannel = config.outputChannelId
+      ? `<#${config.outputChannelId}>`
+      : "(same as source channels)";
+
     const targetLang = getTranslationTargetLanguage(guildId).toUpperCase();
     const displayMode = getTranslationDisplayMode(guildId);
 
@@ -3525,7 +3567,8 @@ client.on("interactionCreate", async (interaction) => {
       content:
         `🌐 **Translation Status**\n` +
         `📤 Display mode: **${displayMode}**\n` +
-        `🎯 Target language: **${targetLang}**\n\n` +
+        `🎯 Target language: **${targetLang}**\n` +
+        `📍 Output channel: **${outputChannel}**\n\n` +
         `📋 **Enabled Channels:**\n${channelsText}`,
       ephemeral: true,
     });
@@ -3799,10 +3842,30 @@ client.on("messageCreate", async (message) => {
     // Only respond if source language is different from target
     if (result.from.language.iso !== targetLang) {
       const displayMode = getTranslationDisplayMode(guildId);
+      const outputChannelId = getTranslationOutputChannel(guildId);
       const translatedText = result.text;
       const sourceLang = result.from.language.iso.toUpperCase();
       const sourceName = getLanguageName(result.from.language.iso);
       const sourceFlag = getLanguageFlag(result.from.language.iso);
+
+      // Determine where to send the translation
+      let targetChannel = message.channel;
+      if (outputChannelId) {
+        try {
+          targetChannel = await message.guild.channels.fetch(outputChannelId);
+          if (!targetChannel) {
+            console.error(
+              `Output channel ${outputChannelId} not found in guild ${guildId}`
+            );
+            targetChannel = message.channel;
+          }
+        } catch (error) {
+          console.error(
+            `Failed to fetch output channel ${outputChannelId}: ${error.message}`
+          );
+          targetChannel = message.channel;
+        }
+      }
 
       if (displayMode === "embed") {
         const embed = new EmbedBuilder()
@@ -3819,21 +3882,43 @@ client.on("messageCreate", async (message) => {
           })
           .setTimestamp();
 
-        await message.channel.send({ embeds: [embed] });
+        // Add channel info if sending to different channel
+        if (outputChannelId) {
+          embed.addFields({
+            name: "Source Channel",
+            value: `<#${message.channel.id}>`,
+            inline: true,
+          });
+        }
+
+        await targetChannel.send({ embeds: [embed] });
       } else if (displayMode === "thread") {
         // Create a thread for the translation
-        const thread = await message.startThread({
+        const thread = await targetChannel.threads.create({
           name: `Translation (${sourceLang} → ${targetLang.toUpperCase()})`,
           autoArchiveDuration: 60,
         });
-        await thread.send(
-          `🌐 **Translation (from ${sourceFlag} ${sourceName} — ${sourceLang}):**\n${translatedText}`
-        );
+
+        let threadMessage = `🌐 **Translation (from ${sourceFlag} ${sourceName} — ${sourceLang}):**\n${translatedText}`;
+        if (outputChannelId) {
+          threadMessage += `\n\n**Source:** ${message.author.username} in <#${message.channel.id}>`;
+        }
+
+        await thread.send(threadMessage);
       } else {
         // Default: reply mode
-        await message.reply(
-          `🌐 **Translation (from ${sourceFlag} ${sourceName} — ${sourceLang} → ${targetLang.toUpperCase()}):**\n${translatedText}`
-        );
+        let replyText = `🌐 **Translation (from ${sourceFlag} ${sourceName} — ${sourceLang} → ${targetLang.toUpperCase()}):**\n${translatedText}`;
+
+        // If sending to output channel, mention the original author
+        if (outputChannelId) {
+          replyText = `${message.author} in <#${message.channel.id}>:\n\n${replyText}`;
+        }
+
+        if (outputChannelId) {
+          await targetChannel.send(replyText);
+        } else {
+          await message.reply(replyText);
+        }
       }
     }
   } catch (error) {

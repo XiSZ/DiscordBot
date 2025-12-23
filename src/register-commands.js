@@ -900,6 +900,19 @@ const commands = [
   ),
   makeGuildOnly(
     new SlashCommandBuilder()
+      .setName("translate-output-channel")
+      .setDescription("Set the channel where translations will be sent")
+      .addChannelOption((option) =>
+        option
+          .setName("channel")
+          .setDescription(
+            "Channel to send translations to (leave empty to disable)"
+          )
+          .setRequired(true)
+      )
+  ),
+  makeGuildOnly(
+    new SlashCommandBuilder()
       .setName("translate-disable")
       .setDescription("Disable auto-translation for a channel")
       .addChannelOption((option) =>
