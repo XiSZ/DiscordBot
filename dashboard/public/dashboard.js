@@ -1,6 +1,9 @@
 let currentGuildId = null;
 let currentGuildName = null;
 let guilds = [];
+let currentConfig = null;
+let availableChannels = [];
+let channelFetchError = null;
 
 // Check if user is authenticated
 async function checkAuth() {
@@ -169,132 +172,139 @@ function switchToServer(guildId, guildName) {
 
 // Load guild translation config
 async function loadGuildConfig() {
+  const content = document.getElementById("translationContent");
+  content.innerHTML = `
+    <div class="d-flex justify-content-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  `;
+
   try {
-    const response = await fetch(`/api/guild/${currentGuildId}/config`);
-    const config = await response.json();
+    const [configResponse, channelsResponse] = await Promise.all([
+      fetch(`/api/guild/${currentGuildId}/config`),
+      fetch(`/api/guild/${currentGuildId}/channels`),
+    ]);
 
-    const content = document.getElementById("translationContent");
+    currentConfig = await configResponse.json();
+    channelFetchError = null;
+
+    let channelsPayload = { channels: [] };
+    if (channelsResponse.ok) {
+      channelsPayload = await channelsResponse.json();
+    } else {
+      channelFetchError = `Failed to load channels (${channelsResponse.status})`;
+      try {
+        const body = await channelsResponse.json();
+        if (body?.error) {
+          channelFetchError = body.error;
+        }
+      } catch (_) {
+        // Ignore parse errors
+      }
+    }
+
+    availableChannels = channelsPayload.channels || [];
+
+    currentConfig = {
+      channels: currentConfig.channels || [],
+      displayMode: currentConfig.displayMode || "reply",
+      targetLanguages: currentConfig.targetLanguages || ["en"],
+      outputChannelId: currentConfig.outputChannelId || null,
+    };
+
     content.innerHTML = `
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="stat-card">
-                        <h5><i class="bi bi-gear"></i> Configuration</h5>
-                        <hr>
-                        <div class="mb-3">
-                            <label class="form-label">Display Mode</label>
-                            <select class="form-select" id="displayMode">
-                                <option value="reply" ${
-                                  config.displayMode === "reply"
-                                    ? "selected"
-                                    : ""
-                                }>Reply to Message</option>
-                                <option value="embed" ${
-                                  config.displayMode === "embed"
-                                    ? "selected"
-                                    : ""
-                                }>Embed</option>
-                                <option value="thread" ${
-                                  config.displayMode === "thread"
-                                    ? "selected"
-                                    : ""
-                                }>Thread</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Target Languages</label>
-                            <div id="languagesList" class="mb-2">
-                                ${config.targetLanguages
-                                  .map(
-                                    (lang) => `
-                                    <span class="language-badge">
-                                        ${lang.toUpperCase()}
-                                        <i class="bi bi-x remove" onclick="removeLanguage('${lang}')"></i>
-                                    </span>
-                                `
-                                  )
-                                  .join("")}
-                            </div>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="newLanguage" 
-                                    placeholder="e.g., es, fr, de" maxlength="5">
-                                <button class="btn btn-primary" onclick="addLanguage()">
-                                    <i class="bi bi-plus"></i> Add
-                                </button>
-                            </div>
-                            <small class="text-muted">Common: en, es, de, fr, it, ja, ko, zh-CN</small>
-                        </div>
-
-                        <div class="mb-3">
-                          <label class="form-label">Output Channel</label>
-                          <div class="input-group">
-                            <span class="input-group-text">#</span>
-                            <input type="text" class="form-control" id="outputChannel" 
-                              value="${config.outputChannelId || ""}"
-                              placeholder="Channel ID (leave blank for same channel)">
-                          </div>
-                          <small class="text-muted">Optional. Enter a channel ID to redirect translations.</small>
-                        </div>
-
-                        <button class="btn btn-success w-100" onclick="saveConfig()">
-                            <i class="bi bi-check-circle"></i> Save Configuration
-                        </button>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                        <div class="stat-card">
-                        <h5><i class="bi bi-hash"></i> Translation Channels</h5>
-                        <hr>
-                        <p class="text-muted">
-                            <i class="bi bi-info-circle"></i>
-                            Enabled channels: <strong>${
-                              config.channels.length
-                            }</strong>
-                        </p>
-                        <div id="channelsList">
-                            ${
-                              config.channels.length > 0
-                                ? config.channels
-                                    .map(
-                                      (channelId) => `
-                                <div class="channel-toggle" data-channel-id="${channelId}">
-                                    <div>
-                                        <i class="bi bi-hash"></i> Channel: ${channelId}
-                                    </div>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="removeChannel('${channelId}')">
-                                      <i class="bi bi-x"></i> Remove
-                                    </button>
-                                </div>
-                            `
-                                    )
-                                    .join("")
-                                : '<p class="text-muted">No channels enabled</p>'
-                            }
-                        </div>
-
-                        <div class="input-group mt-3">
-                          <span class="input-group-text">#</span>
-                          <input type="text" class="form-control" id="newChannelId" placeholder="Add channel ID">
-                          <button class="btn btn-primary" onclick="addChannel()">
-                            <i class="bi bi-plus"></i> Add
-                          </button>
-                        </div>
-                        <small class="text-muted mt-2 d-block">
-                            Tip: Right-click a channel in Discord → Copy Channel ID (Developer Mode required)
-                        </small>
-                    </div>
-                </div>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="stat-card">
+            <h5><i class="bi bi-gear"></i> Configuration</h5>
+            <hr>
+            <div class="mb-3">
+              <label class="form-label">Display Mode</label>
+              <select class="form-select" id="displayMode">
+                <option value="reply" ${
+                  currentConfig.displayMode === "reply" ? "selected" : ""
+                }>Reply to Message</option>
+                <option value="embed" ${
+                  currentConfig.displayMode === "embed" ? "selected" : ""
+                }>Embed</option>
+                <option value="thread" ${
+                  currentConfig.displayMode === "thread" ? "selected" : ""
+                }>Thread</option>
+              </select>
             </div>
-        `;
+
+            <div class="mb-3">
+              <label class="form-label">Target Languages</label>
+              <div id="languagesList" class="mb-2"></div>
+              <div class="input-group">
+                <input type="text" class="form-control" id="newLanguage" 
+                  placeholder="e.g., es, fr, de" maxlength="5">
+                <button class="btn btn-primary" onclick="addLanguage()">
+                  <i class="bi bi-plus"></i> Add
+                </button>
+              </div>
+              <small class="text-muted">Common: en, es, de, fr, it, ja, ko, zh-CN</small>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Output Channel</label>
+              <div class="input-group">
+                <span class="input-group-text">#</span>
+                <input type="text" class="form-control" id="outputChannel" 
+                  value="${currentConfig.outputChannelId || ""}"
+                  placeholder="Channel ID (leave blank for same channel)">
+              </div>
+              <small class="text-muted">Optional. Enter a channel ID to redirect translations.</small>
+            </div>
+
+            <button class="btn btn-success w-100" onclick="saveConfig()">
+              <i class="bi bi-check-circle"></i> Save Configuration
+            </button>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="stat-card">
+            <h5><i class="bi bi-hash"></i> Translation Channels</h5>
+            <hr>
+            <p class="text-muted">
+              <i class="bi bi-info-circle"></i>
+              Enabled channels: <strong id="channelsCount"></strong>
+            </p>
+
+            <div id="selectedChannels" class="mb-3"></div>
+
+            <h6 class="mb-2"><i class="bi bi-list-check"></i> Available Channels</h6>
+            <div id="channelPicker" class="mb-3"></div>
+
+            <div class="input-group mt-3">
+              <span class="input-group-text">#</span>
+              <input type="text" class="form-control" id="newChannelId" placeholder="Add channel ID">
+              <button class="btn btn-primary" onclick="addChannel()">
+                <i class="bi bi-plus"></i> Add
+              </button>
+            </div>
+            <small class="text-muted mt-2 d-block">
+              Tip: Right-click a channel in Discord → Copy Channel ID (Developer Mode required)
+            </small>
+          </div>
+        </div>
+      </div>
+    `;
+
+    renderLanguageBadges();
+    renderChannelPicker();
+    renderSelectedChannels();
   } catch (error) {
     console.error("Error loading config:", error);
-    document.getElementById("translationContent").innerHTML = `
-            <div class="alert alert-danger">
-                <i class="bi bi-exclamation-triangle"></i>
-                Failed to load configuration
-            </div>
-        `;
+    content.innerHTML = `
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i>
+        Failed to load configuration
+      </div>
+    `;
   }
 }
 
@@ -400,6 +410,126 @@ async function loadGuildStats() {
   }
 }
 
+function channelDisplayName(channelId) {
+  const channel = availableChannels.find((ch) => ch.id === channelId);
+  return channel ? `#${channel.name}` : `#${channelId}`;
+}
+
+function renderLanguageBadges() {
+  const container = document.getElementById("languagesList");
+  if (!container || !currentConfig) return;
+
+  if (
+    !currentConfig.targetLanguages ||
+    currentConfig.targetLanguages.length === 0
+  ) {
+    container.innerHTML =
+      '<p class="text-muted mb-0">No languages selected</p>';
+    return;
+  }
+
+  container.innerHTML = currentConfig.targetLanguages
+    .map(
+      (lang) => `
+        <span class="language-badge">
+          ${lang.toUpperCase()}
+          <i class="bi bi-x remove" onclick="removeLanguage('${lang}')"></i>
+        </span>
+      `
+    )
+    .join("");
+}
+
+function renderChannelPicker() {
+  const container = document.getElementById("channelPicker");
+  if (!container) return;
+
+  if (channelFetchError) {
+    container.innerHTML = `
+      <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i> ${channelFetchError}
+      </div>
+    `;
+    return;
+  }
+
+  if (!availableChannels || availableChannels.length === 0) {
+    container.innerHTML =
+      '<p class="text-muted">No channel list available. Use manual add below.</p>';
+    return;
+  }
+
+  container.innerHTML = availableChannels
+    .map(
+      (channel) => `
+        <div class="form-check mb-2">
+          <input class="form-check-input channel-checkbox" type="checkbox"
+            id="channel-${channel.id}" value="${channel.id}"
+            ${currentConfig.channels.includes(channel.id) ? "checked" : ""}
+            onchange="toggleChannelSelection('${channel.id}', this.checked)">
+          <label class="form-check-label" for="channel-${channel.id}">
+            <i class="bi bi-hash"></i> ${channel.name}
+          </label>
+        </div>
+      `
+    )
+    .join("");
+}
+
+function syncChannelCheckboxes() {
+  document.querySelectorAll(".channel-checkbox").forEach((input) => {
+    input.checked = currentConfig.channels.includes(input.value);
+  });
+}
+
+function renderSelectedChannels() {
+  const list = document.getElementById("selectedChannels");
+  const count = document.getElementById("channelsCount");
+  if (!list || !count || !currentConfig) return;
+
+  const items = currentConfig.channels || [];
+  count.textContent = items.length;
+
+  if (items.length === 0) {
+    list.innerHTML = '<p class="text-muted">No channels enabled</p>';
+    syncChannelCheckboxes();
+    return;
+  }
+
+  list.innerHTML = items
+    .map(
+      (channelId) => `
+        <div class="channel-toggle" data-channel-id="${channelId}">
+          <div>
+            <i class="bi bi-hash"></i> ${channelDisplayName(channelId)}
+          </div>
+          <button class="btn btn-sm btn-outline-danger" onclick="removeChannel('${channelId}')">
+            <i class="bi bi-x"></i> Remove
+          </button>
+        </div>
+      `
+    )
+    .join("");
+
+  syncChannelCheckboxes();
+}
+
+function toggleChannelSelection(channelId, checked) {
+  if (!currentConfig) return;
+
+  if (checked) {
+    if (!currentConfig.channels.includes(channelId)) {
+      currentConfig.channels.push(channelId);
+    }
+  } else {
+    currentConfig.channels = currentConfig.channels.filter(
+      (c) => c !== channelId
+    );
+  }
+
+  renderSelectedChannels();
+}
+
 // Add language
 async function addLanguage() {
   const input = document.getElementById("newLanguage");
@@ -415,23 +545,19 @@ async function addLanguage() {
     return;
   }
 
-  try {
-    const response = await fetch(`/api/guild/${currentGuildId}/config`);
-    const config = await response.json();
-
-    if (config.targetLanguages.includes(lang)) {
-      alert(`Language ${lang.toUpperCase()} is already added.`);
-      return;
-    }
-
-    config.targetLanguages.push(lang);
-
-    await saveConfigData(config);
-    input.value = "";
-    loadGuildConfig();
-  } catch (error) {
-    alert("Failed to add language: " + error.message);
+  if (!currentConfig) {
+    alert("Please select a server first.");
+    return;
   }
+
+  if (currentConfig.targetLanguages.includes(lang)) {
+    alert(`Language ${lang.toUpperCase()} is already added.`);
+    return;
+  }
+
+  currentConfig.targetLanguages.push(lang);
+  input.value = "";
+  renderLanguageBadges();
 }
 
 // Add channel
@@ -444,103 +570,78 @@ async function addChannel() {
     return;
   }
 
-  try {
-    const response = await fetch(`/api/guild/${currentGuildId}/config`);
-    const config = await response.json();
-
-    if (config.channels.includes(channelId)) {
-      alert("Channel already enabled.");
-      return;
-    }
-
-    config.channels.push(channelId);
-
-    await saveConfigData(config);
-    input.value = "";
-    loadGuildConfig();
-  } catch (error) {
-    alert("Failed to add channel: " + error.message);
+  if (!currentConfig) {
+    alert("Please select a server first.");
+    return;
   }
+
+  if (currentConfig.channels.includes(channelId)) {
+    alert("Channel already enabled.");
+    return;
+  }
+
+  currentConfig.channels.push(channelId);
+  input.value = "";
+  renderSelectedChannels();
 }
 
 // Remove channel
 async function removeChannel(channelId) {
   if (!confirm(`Remove channel ${channelId}?`)) return;
 
-  try {
-    const response = await fetch(`/api/guild/${currentGuildId}/config`);
-    const config = await response.json();
-
-    config.channels = config.channels.filter((c) => c !== channelId);
-
-    await saveConfigData(config);
-    loadGuildConfig();
-  } catch (error) {
-    alert("Failed to remove channel: " + error.message);
+  if (!currentConfig) {
+    alert("Please select a server first.");
+    return;
   }
+
+  currentConfig.channels = currentConfig.channels.filter(
+    (c) => c !== channelId
+  );
+  renderSelectedChannels();
 }
 
 // Remove language
 async function removeLanguage(lang) {
   if (!confirm(`Remove language ${lang.toUpperCase()}?`)) return;
 
-  try {
-    const response = await fetch(`/api/guild/${currentGuildId}/config`);
-    const config = await response.json();
-
-    config.targetLanguages = config.targetLanguages.filter((l) => l !== lang);
-
-    if (config.targetLanguages.length === 0) {
-      alert(
-        "Cannot remove the last language. At least one language is required."
-      );
-      return;
-    }
-
-    await saveConfigData(config);
-    loadGuildConfig();
-  } catch (error) {
-    alert("Failed to remove language: " + error.message);
-  }
-}
-
-// Helper function to save config data
-async function saveConfigData(config) {
-  const response = await fetch(`/api/guild/${currentGuildId}/config`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(config),
-  });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.error || "Failed to save configuration");
+  if (!currentConfig) {
+    alert("Please select a server first.");
+    return;
   }
 
-  return result;
+  const nextLanguages = currentConfig.targetLanguages.filter((l) => l !== lang);
+
+  if (nextLanguages.length === 0) {
+    alert(
+      "Cannot remove the last language. At least one language is required."
+    );
+    return;
+  }
+
+  currentConfig.targetLanguages = nextLanguages;
+  renderLanguageBadges();
 }
 
 // Save configuration
 async function saveConfig() {
+  if (!currentConfig) {
+    alert("Please select a server first.");
+    return;
+  }
+
   const displayMode = document.getElementById("displayMode").value;
-  const languagesList = document.getElementById("languagesList");
-  const languageBadges = languagesList.querySelectorAll(".language-badge");
-  const targetLanguages = Array.from(languageBadges).map((badge) =>
-    badge.textContent.trim().replace("×", "").trim().toLowerCase()
-  );
   const outputChannelId =
     document.getElementById("outputChannel").value.trim() || null;
 
-  // Collect channels from list
-  const channelElements = document.querySelectorAll(
-    "#channelsList .channel-toggle"
-  );
-  const channels = Array.from(channelElements).map((el) =>
-    el.getAttribute("data-channel-id")
-  );
+  currentConfig.displayMode = displayMode;
+  currentConfig.outputChannelId = outputChannelId;
+
+  const payload = {
+    displayMode,
+    targetLanguages: currentConfig.targetLanguages,
+    outputChannelId,
+    channels: currentConfig.channels,
+  };
 
   try {
     const response = await fetch(`/api/guild/${currentGuildId}/config`, {
@@ -548,12 +649,7 @@ async function saveConfig() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        displayMode,
-        targetLanguages,
-        outputChannelId,
-        channels,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json();

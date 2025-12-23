@@ -16,6 +16,8 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || process.env.DASHBOARD_PORT || 3000;
 
+app.use(express.json());
+
 // Public metadata for login screen
 app.get("/api/meta", (req, res) => {
   res.json({
@@ -25,6 +27,26 @@ app.get("/api/meta", (req, res) => {
       "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f916.png",
   });
 });
+
+// Helpers for config paths
+const DATA_DIR =
+  process.env.RAILWAY_VOLUME_MOUNT_PATH || join(__dirname, "..", "data");
+const DISCORD_API_BASE = "https://discord.com/api/v10";
+
+function ensureDir(path) {
+  if (!existsSync(path)) {
+    mkdirSync(path, { recursive: true });
+  }
+}
+
+function readJSON(path, fallback) {
+  try {
+    if (!existsSync(path)) return fallback;
+    return JSON.parse(readFileSync(path, "utf-8"));
+  } catch (e) {
+    return fallback;
+  }
+}
 
 // Create session file store
 const SessionFileStore = FileStore(session);
@@ -79,7 +101,6 @@ passport.use(
 
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(express.json());
 app.use(express.static(join(__dirname, "..", "dashboard", "public")));
 
 // Auth middleware
@@ -146,24 +167,19 @@ app.get("/api/guild/:guildId/config", isAuthenticated, async (req, res) => {
   try {
     const { guildId } = req.params;
     const configPath = join(
-      __dirname,
-      "..",
-      "data",
+      DATA_DIR,
       "servers",
       guildId,
       "translation-config.json"
     );
 
-    if (!existsSync(configPath)) {
-      return res.json({
-        channels: [],
-        displayMode: "reply",
-        targetLanguages: ["en"],
-        outputChannelId: null,
-      });
-    }
+    const config = readJSON(configPath, {
+      channels: [],
+      displayMode: "reply",
+      targetLanguages: ["en"],
+      outputChannelId: null,
+    });
 
-    const config = JSON.parse(readFileSync(configPath, "utf-8"));
     res.json(config);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -175,26 +191,81 @@ app.get("/api/guild/:guildId/stats", isAuthenticated, async (req, res) => {
   try {
     const { guildId } = req.params;
     const statsPath = join(
-      __dirname,
-      "..",
-      "data",
+      DATA_DIR,
       "servers",
       guildId,
       "translation-stats.json"
     );
 
-    if (!existsSync(statsPath)) {
-      return res.json({
-        total: 0,
-        byLanguagePair: {},
-        byChannel: {},
-      });
-    }
+    const stats = readJSON(statsPath, {
+      total: 0,
+      byLanguagePair: {},
+      byChannel: {},
+    });
 
-    const stats = JSON.parse(readFileSync(statsPath, "utf-8"));
     res.json(stats);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// API: List guild channels for selection
+app.get("/api/guild/:guildId/channels", isAuthenticated, async (req, res) => {
+  try {
+    const { guildId } = req.params;
+
+    // Verify permission
+    const userGuilds = req.user.guilds || [];
+    const hasPermission = userGuilds.some(
+      (g) => g.id === guildId && (g.permissions & 0x20) === 0x20
+    );
+
+    if (!hasPermission) {
+      return res
+        .status(403)
+        .json({ error: "No permission to manage this server" });
+    }
+
+    const botToken = process.env.BOT_TOKEN || process.env.DISCORD_TOKEN;
+    if (!botToken) {
+      return res
+        .status(500)
+        .json({
+          error: "Bot token is not configured (set BOT_TOKEN or DISCORD_TOKEN)",
+        });
+    }
+
+    const response = await fetch(
+      `${DISCORD_API_BASE}/guilds/${guildId}/channels`,
+      {
+        headers: {
+          Authorization: `Bot ${botToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      return res
+        .status(response.status)
+        .json({ error: `Failed to fetch channels: ${text || "Unknown"}` });
+    }
+
+    const channels = await response.json();
+    const allowedTypes = new Set([0, 5, 15]); // Text, Announcement, Forum
+    const filtered = channels
+      .filter((ch) => allowedTypes.has(ch.type))
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+
+    res.json({
+      channels: filtered.map((ch) => ({
+        id: ch.id,
+        name: ch.name,
+        type: ch.type,
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message || "Failed to load channels" });
   }
 });
 
@@ -219,24 +290,18 @@ app.post("/api/guild/:guildId/config", isAuthenticated, async (req, res) => {
 
     // Load existing config
     const configPath = join(
-      __dirname,
-      "..",
-      "data",
+      DATA_DIR,
       "servers",
       guildId,
       "translation-config.json"
     );
 
-    let config = {
+    let config = readJSON(configPath, {
       channels: [],
       displayMode: "reply",
       targetLanguages: ["en"],
       outputChannelId: null,
-    };
-
-    if (existsSync(configPath)) {
-      config = JSON.parse(readFileSync(configPath, "utf-8"));
-    }
+    });
 
     // Update config
     if (displayMode) config.displayMode = displayMode;
@@ -251,9 +316,7 @@ app.post("/api/guild/:guildId/config", isAuthenticated, async (req, res) => {
 
     // Ensure directory exists
     const configDir = dirname(configPath);
-    if (!existsSync(configDir)) {
-      mkdirSync(configDir, { recursive: true });
-    }
+    ensureDir(configDir);
 
     // Save config
     writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
