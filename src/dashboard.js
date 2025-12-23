@@ -19,7 +19,7 @@ const PORT = process.env.PORT || process.env.DASHBOARD_PORT || 3000;
 // Public metadata for login screen
 app.get("/api/meta", (req, res) => {
   res.json({
-    botName: process.env.BOT_NAME || "Bot Dashboard",
+    botName: process.env.BOT_NAME || "aB0T Dashboard",
     botAvatarUrl:
       process.env.BOT_AVATAR_URL ||
       "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f916.png",
