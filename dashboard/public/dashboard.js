@@ -27,14 +27,16 @@ async function checkAuth() {
 // Load user's guilds
 async function loadGuilds() {
   const container = document.getElementById("serversList");
-  
+
   try {
     const response = await fetch("/api/guilds");
-    
+
     if (!response.ok) {
-      throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+      throw new Error(
+        `Server returned ${response.status}: ${response.statusText}`
+      );
     }
-    
+
     guilds = await response.json();
 
     if (guilds.length === 0) {
@@ -134,8 +136,11 @@ function updateServerHeaders() {
         : "https://cdn.discordapp.com/embed/avatars/0.png";
       return `
         <li>
-          <a class="dropdown-item ${isActive ? 'active' : ''}" href="#" 
-             onclick="switchToServer('${guild.id}', '${guild.name.replace(/'/g, "\\'")}')
+          <a class="dropdown-item ${isActive ? "active" : ""}" href="#" 
+             onclick="switchToServer('${guild.id}', '${guild.name.replace(
+        /'/g,
+        "\\'"
+      )}')
              event.preventDefault(); return false;">
             <img src="${gIcon}" width="20" height="20" class="rounded-circle me-2">
             ${guild.name}
@@ -429,7 +434,9 @@ async function removeLanguage(lang) {
     config.targetLanguages = config.targetLanguages.filter((l) => l !== lang);
 
     if (config.targetLanguages.length === 0) {
-      alert("Cannot remove the last language. At least one language is required.");
+      alert(
+        "Cannot remove the last language. At least one language is required."
+      );
       return;
     }
 
@@ -490,46 +497,12 @@ async function saveConfig() {
         <i class="bi bi-check-circle"></i> ${result.message}
         <br><small>Changes will take effect for new translations.</small>
       `;
-      document.getElementById("translationContent").insertBefore(
-        successAlert,
-        document.getElementById("translationContent").firstChild
-      );
-
-      setTimeout(() => successAlert.remove(), 5000);
-
-      // Reload config
-      loadGuildConfig();
-    } else {
-      alert(`Error: ${result.error || "Failed to save configuration"}`);
-    }
-  } catch (error) {
-    alert("Failed to save configuration: " + error.message);
-  }
-}
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        displayMode,
-        targetLanguages,
-      }),
-    });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      // Show success message
-      const successAlert = document.createElement("div");
-      successAlert.className = "alert alert-success mt-3";
-      successAlert.innerHTML = `
-        <i class="bi bi-check-circle"></i> ${result.message}
-        <br><small>Changes will take effect for new translations.</small>
-      `;
-      document.getElementById("translationContent").insertBefore(
-        successAlert,
-        document.getElementById("translationContent").firstChild
-      );
+      document
+        .getElementById("translationContent")
+        .insertBefore(
+          successAlert,
+          document.getElementById("translationContent").firstChild
+        );
 
       setTimeout(() => successAlert.remove(), 5000);
 
