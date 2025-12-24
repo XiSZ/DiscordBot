@@ -39,19 +39,22 @@ async function checkAuth() {
       return false;
     }
     const user = await response.json();
-    
+
     // Update username
     const userInfoEl = document.getElementById("userInfo");
     if (userInfoEl) {
-      userInfoEl.textContent = user.discriminator === '0' ? user.username : `${user.username}#${user.discriminator}`;
+      userInfoEl.textContent =
+        user.discriminator === "0"
+          ? user.username
+          : `${user.username}#${user.discriminator}`;
     }
-    
+
     // Update avatar
     const avatarEl = document.getElementById("userAvatar");
     if (avatarEl && user.avatar) {
       avatarEl.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`;
     }
-    
+
     return true;
   } catch (error) {
     console.error("Auth error:", error);
@@ -64,7 +67,7 @@ async function checkAuth() {
 // Handle sidebar server dropdown change
 function handleSidebarServerChange(guildId) {
   if (!guildId) return;
-  const guild = guilds.find(g => g.id === guildId);
+  const guild = guilds.find((g) => g.id === guildId);
   if (guild) {
     selectGuild(guild.id, guild.name);
   }
@@ -72,14 +75,17 @@ function handleSidebarServerChange(guildId) {
 
 // Populate sidebar server selector
 function populateSidebarServerSelector() {
-  const selector = document.getElementById('sidebarServerSelector');
+  const selector = document.getElementById("sidebarServerSelector");
   if (!selector || !guilds.length) return;
-  
-  selector.innerHTML = '<option value="" style="background: #2c3e50; color: white;">Choose a server...</option>' +
-    guilds.map(guild => {
-      const selected = guild.id === currentGuildId ? 'selected' : '';
-      return `<option value="${guild.id}" ${selected} style="background: #2c3e50; color: white;">${guild.name}</option>`;
-    }).join('');
+
+  selector.innerHTML =
+    '<option value="" style="background: #2c3e50; color: white;">Choose a server...</option>' +
+    guilds
+      .map((guild) => {
+        const selected = guild.id === currentGuildId ? "selected" : "";
+        return `<option value="${guild.id}" ${selected} style="background: #2c3e50; color: white;">${guild.name}</option>`;
+      })
+      .join("");
 }
 
 // (removed stray commands rendering fragment)
@@ -110,58 +116,72 @@ async function loadGuilds() {
     const html = guilds
       .map((guild) => {
         const iconUrl = guild.icon
-          ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`
+          ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`
           : "https://cdn.discordapp.com/embed/avatars/0.png";
-        
-        const botStatus = guild.botJoined 
-          ? '<span class="badge bg-success ms-2"><i class="bi bi-check-circle-fill"></i> Bot Joined</span>'
-          : '<span class="badge bg-warning text-dark ms-2"><i class="bi bi-exclamation-circle"></i> Bot Not in Server</span>';
-        
-        const actionButtons = guild.botJoined
-          ? `<button class="btn btn-sm btn-outline-primary me-2" onclick="refreshBotStatus('${guild.id}')" title="Refresh bot status">
-              <i class="bi bi-arrow-clockwise"></i> Refresh
+
+        const botJoined = guild.botJoined === true;
+
+        const statusBadge = botJoined
+          ? '<span class="badge" style="background: rgba(67, 181, 129, 0.15); color: #43b581; font-size: 0.75rem; padding: 4px 8px;"><i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Active</span>'
+          : '<span class="badge" style="background: rgba(250, 166, 26, 0.15); color: #faa61a; font-size: 0.75rem; padding: 4px 8px;"><i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Not Joined</span>';
+
+        const quickActions = botJoined
+          ? `<button class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); refreshBotStatus('${
+              guild.id
+            }')" title="Refresh status" style="padding: 4px 12px;">
+              <i class="bi bi-arrow-clockwise"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger" onclick="leaveGuild('${guild.id}', '${guild.name.replace(/'/g, "\\'")}')">
-              <i class="bi bi-box-arrow-right"></i> Leave
+            <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); leaveGuild('${
+              guild.id
+            }', '${guild.name.replace(
+              /'/g,
+              "\\'"
+            )}')" title="Leave server" style="padding: 4px 12px;">
+              <i class="bi bi-box-arrow-right"></i>
             </button>`
-          : `<button class="btn btn-sm btn-primary" onclick="window.open('/api/invite?guildId=${guild.id}', '_blank')">
-              <i class="bi bi-plus-circle"></i> Invite Bot
-            </button>`;
-        
+          : `<a href="/api/invite?guildId=${guild.id}" target="_blank" class="btn btn-sm btn-primary" onclick="event.stopPropagation()" title="Invite bot" style="padding: 4px 12px;">
+              <i class="bi bi-plus-circle"></i> Invite
+            </a>`;
+
         return `
-        <div class="stat-card mb-3">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center flex-grow-1" style="cursor: pointer;" onclick="selectGuild('${guild.id}', '${guild.name.replace(/'/g, "\\'")}')">
-              <img src="${iconUrl}" alt="${guild.name}" class="rounded-circle me-3" width="64" height="64" style="border: 2px solid #dee2e6;">
-              <div class="flex-grow-1">
-                <div class="d-flex align-items-center mb-1">
-                  <h5 class="mb-0">${guild.name}</h5>
-                  ${botStatus}
-                </div>
-                <small class="text-muted">
-                  <i class="bi bi-hash"></i> Server ID: ${guild.id}
-                </small>
+        <div class="server-item" onclick="selectGuild('${
+          guild.id
+        }', '${guild.name.replace(/'/g, "\\'")}')">
+          <div class="d-flex align-items-center flex-grow-1">
+            <img src="${iconUrl}" alt="${guild.name}" class="server-icon">
+            <div class="server-info">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="server-name">${guild.name}</span>
+                ${statusBadge}
               </div>
+              <small class="server-id"><i class="bi bi-hash"></i> ${
+                guild.id
+              }</small>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              ${actionButtons}
-              <button class="btn btn-sm btn-primary" onclick="selectGuild('${guild.id}', '${guild.name.replace(/'/g, "\\'")}')">
-                <i class="bi bi-gear"></i> Manage
-              </button>
-            </div>
+          </div>
+          <div class="server-actions" onclick="event.stopPropagation()">
+            ${quickActions}
+            <button class="btn btn-sm btn-primary" onclick="selectGuild('${
+              guild.id
+            }', '${guild.name.replace(
+          /'/g,
+          "\\'"
+        )}'); event.stopPropagation();" style="padding: 4px 12px;">
+              <i class="bi bi-gear-fill"></i> Manage
+            </button>
           </div>
         </div>
       `;
       })
       .join("");
     if (container) container.innerHTML = html;
-    
+
     // Populate sidebar server selector
     populateSidebarServerSelector();
   } catch (error) {
     if (container) {
       container.innerHTML = `
-        <div class="col-12 text-center py-5">
+        <div class="text-center py-5">
           <i class="bi bi-exclamation-triangle" style="font-size: 3rem; color: #dc3545;"></i>
           <h5 class="mt-3 text-danger">Failed to load servers</h5>
           <p class="text-muted">${error.message}</p>
@@ -183,9 +203,9 @@ function selectGuild(guildId, guildName) {
 
   // Update server headers
   updateServerHeaders();
-  
+
   // Update sidebar selector
-  const selector = document.getElementById('sidebarServerSelector');
+  const selector = document.getElementById("sidebarServerSelector");
   if (selector) {
     selector.value = guildId;
   }
@@ -692,8 +712,8 @@ function languageDisplay(code, includeCode = false) {
   const norm = String(code).toLowerCase();
   const info = LANG_MAP[norm] || LANG_MAP[norm.split("-")[0]];
   if (!info) return `<i class="bi bi-globe2"></i> ${code}`;
-  const display = includeCode 
-    ? `<span class="fi fi-${info.flagCode}" style="margin-right: 4px;"></span>${info.name} (${code})` 
+  const display = includeCode
+    ? `<span class="fi fi-${info.flagCode}" style="margin-right: 4px;"></span>${info.name} (${code})`
     : `<span class="fi fi-${info.flagCode}" style="margin-right: 4px;"></span>${info.name}`;
   return display;
 }
@@ -1700,19 +1720,25 @@ function renderCommandsList(commands) {
         : '<span class="badge bg-success ms-1">Active</span>';
       const toggleId = `disable_${c.scope}_${c.id}`;
       return `
-        <div class="d-flex align-items-center justify-content-between border rounded p-3 mb-2 ${c.disabled ? 'bg-light' : ''}">
+        <div class="d-flex align-items-center justify-content-between border rounded p-3 mb-2 ${
+          c.disabled ? "bg-light" : ""
+        }">
           <div class="flex-grow-1">
             <div class="d-flex align-items-center mb-1">
               <strong style="font-size: 1.1rem;">/${c.name}</strong>
               <span class="ms-2">${scopeBadge}${statusBadge}</span>
             </div>
-            <small class="text-muted">${c.description || "No description"}</small>
+            <small class="text-muted">${
+              c.description || "No description"
+            }</small>
           </div>
           <div class="d-flex align-items-center gap-2">
             <div class="form-check form-switch mb-0">
               <input class="form-check-input" type="checkbox" id="${toggleId}" ${
         c.disabled ? "" : "checked"
-      } onchange="toggleCommandRuntime('${c.name}', this.checked)" style="cursor: pointer;">
+      } onchange="toggleCommandRuntime('${
+        c.name
+      }', this.checked)" style="cursor: pointer;">
               <label class="form-check-label" for="${toggleId}" style="cursor: pointer; user-select: none;">
                 ${c.disabled ? "Enable" : "Disable"}
               </label>
@@ -1780,7 +1806,11 @@ async function refreshBotStatus(guildId) {
   try {
     const data = await fetchJSON(`/api/guild/${guildId}/bot-status`);
     if (data.joined) {
-      alert(`Bot is in server!\nMember Count: ${data.memberCount}\nJoined: ${new Date(data.joinedAt).toLocaleString()}`);
+      alert(
+        `Bot is in server!\nMember Count: ${
+          data.memberCount
+        }\nJoined: ${new Date(data.joinedAt).toLocaleString()}`
+      );
     } else {
       alert("Bot is not in this server");
     }
@@ -1792,21 +1822,25 @@ async function refreshBotStatus(guildId) {
 
 // Leave a guild
 async function leaveGuild(guildId, guildName) {
-  if (!confirm(`Are you sure you want the bot to leave "${guildName}"?\n\nThis will remove the bot from the server. You can re-invite it later.`)) {
+  if (
+    !confirm(
+      `Are you sure you want the bot to leave "${guildName}"?\n\nThis will remove the bot from the server. You can re-invite it later.`
+    )
+  ) {
     return;
   }
-  
+
   try {
     const response = await fetch(`/api/guild/${guildId}/leave`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.error || "Failed to leave server");
     }
-    
+
     alert(`Bot successfully left "${guildName}"`);
     await loadGuilds(); // Refresh the list
   } catch (error) {

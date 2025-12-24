@@ -19,10 +19,13 @@
     <style>
       body {
         background: #f8f9fa;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "Apple Color Emoji", Roboto, Helvetica, Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji",
+          "Apple Color Emoji", Roboto, Helvetica, Arial, sans-serif;
       }
       .flag-emoji {
-        font-family: "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
+        font-family: "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji",
+          "Apple Color Emoji", sans-serif;
       }
       .sidebar {
         height: 100vh;
@@ -165,6 +168,59 @@
       #sidebarServerSelector option:checked {
         background: #667eea;
       }
+      .server-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        background: white;
+        transition: all 0.2s;
+        cursor: pointer;
+      }
+      .server-item:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-color: #667eea;
+        transform: translateY(-1px);
+      }
+      .server-item.selected {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.05);
+      }
+      .server-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .server-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .server-name {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #212529;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .server-id {
+        font-size: 0.8rem;
+        color: #6c757d;
+        font-family: monospace;
+      }
+      .server-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .server-actions .btn {
+        padding: 4px 8px;
+        font-size: 0.85rem;
+      }
     </style>
   </head>
   <body>
@@ -174,7 +230,15 @@
       <div class="px-3 mb-3 pt-3">
         <div
           class="card"
-          style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15)); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);"
+          style="
+            background: linear-gradient(
+              135deg,
+              rgba(102, 126, 234, 0.15),
+              rgba(118, 75, 162, 0.15)
+            );
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+          "
         >
           <div class="card-body p-3">
             <div class="d-flex align-items-center">
@@ -183,7 +247,11 @@
                 src="https://cdn.discordapp.com/embed/avatars/0.png"
                 alt="User Avatar"
                 class="rounded-circle me-3"
-                style="width: 48px; height: 48px; border: 2px solid rgba(255, 255, 255, 0.3);"
+                style="
+                  width: 48px;
+                  height: 48px;
+                  border: 2px solid rgba(255, 255, 255, 0.3);
+                "
               />
               <div style="flex: 1; min-width: 0">
                 <div
@@ -200,8 +268,20 @@
                   Loading...
                 </div>
                 <div class="d-flex align-items-center mt-1">
-                  <span class="badge" style="background: rgba(67, 181, 129, 0.2); color: #43b581; font-size: 0.7rem; padding: 2px 6px;">
-                    <i class="bi bi-circle-fill" style="font-size: 0.5rem; margin-right: 3px;"></i>Online
+                  <span
+                    class="badge"
+                    style="
+                      background: rgba(67, 181, 129, 0.2);
+                      color: #43b581;
+                      font-size: 0.7rem;
+                      padding: 2px 6px;
+                    "
+                  >
+                    <i
+                      class="bi bi-circle-fill"
+                      style="font-size: 0.5rem; margin-right: 3px"
+                    ></i
+                    >Online
                   </span>
                 </div>
               </div>
@@ -212,20 +292,31 @@
 
       <!-- Server Selector -->
       <div class="px-3 mb-3">
-        <label class="text-white-50 d-block mb-2" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Select Server</label>
-        <select 
-          id="sidebarServerSelector" 
+        <label
+          class="text-white-50 d-block mb-2"
+          style="
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+          "
+          >Select Server</label
+        >
+        <select
+          id="sidebarServerSelector"
           class="form-select"
           style="
-            background: rgba(255, 255, 255, 0.1); 
-            border: 1px solid rgba(255, 255, 255, 0.2); 
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
             font-size: 0.9rem;
             cursor: pointer;
           "
           onchange="handleSidebarServerChange(this.value)"
         >
-          <option value="" style="background: #2c3e50; color: white;">Choose a server...</option>
+          <option value="" style="background: #2c3e50; color: white">
+            Choose a server...
+          </option>
         </select>
       </div>
 
@@ -233,7 +324,11 @@
       <div class="px-3 mb-3" id="currentServerDisplay" style="display: none">
         <div
           class="card"
-          style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(102, 126, 234, 0.3); backdrop-filter: blur(10px);"
+          style="
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            backdrop-filter: blur(10px);
+          "
         >
           <div class="card-body p-2">
             <div class="d-flex align-items-center">
@@ -244,7 +339,7 @@
                 class="rounded-circle me-2"
                 width="36"
                 height="36"
-                style="border: 2px solid rgba(102, 126, 234, 0.5);"
+                style="border: 2px solid rgba(102, 126, 234, 0.5)"
               />
               <div style="flex: 1; min-width: 0">
                 <div
@@ -261,7 +356,11 @@
                   None
                 </div>
                 <small
-                  style="color: rgba(102, 126, 234, 0.9); font-size: 0.7rem; font-weight: 500;"
+                  style="
+                    color: rgba(102, 126, 234, 0.9);
+                    font-size: 0.7rem;
+                    font-weight: 500;
+                  "
                   ><i class="bi bi-check-circle-fill"></i> Active</small
                 >
               </div>
@@ -311,7 +410,9 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h2><i class="bi bi-server"></i> Your Servers</h2>
-            <p class="text-muted mb-0">Manage servers where you have admin permissions</p>
+            <p class="text-muted mb-0">
+              Manage servers where you have admin permissions
+            </p>
           </div>
           <button class="btn btn-primary" onclick="refreshServers()">
             <i class="bi bi-arrow-clockwise"></i> Refresh
@@ -604,7 +705,9 @@
                 <p class="text-muted small mb-0 mt-1">
                   Remove a user from the server
                 </p>
-                <small class="text-muted"><i class="bi bi-key-fill"></i> Requires: Kick Members</small>
+                <small class="text-muted"
+                  ><i class="bi bi-key-fill"></i> Requires: Kick Members</small
+                >
               </div>
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start flex-wrap">
@@ -613,7 +716,9 @@
                   <code class="text-secondary ms-1">[reason]</code>
                 </div>
                 <p class="text-muted small mb-0 mt-1">Permanently ban a user</p>
-                <small class="text-muted"><i class="bi bi-key-fill"></i> Requires: Ban Members</small>
+                <small class="text-muted"
+                  ><i class="bi bi-key-fill"></i> Requires: Ban Members</small
+                >
               </div>
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start flex-wrap">
@@ -622,16 +727,26 @@
                   <code class="text-danger ms-1">&lt;minutes&gt;</code>
                   <code class="text-secondary ms-1">[reason]</code>
                 </div>
-                <p class="text-muted small mb-0 mt-1">Timeout a user temporarily</p>
-                <small class="text-muted"><i class="bi bi-key-fill"></i> Requires: Moderate Members</small>
+                <p class="text-muted small mb-0 mt-1">
+                  Timeout a user temporarily
+                </p>
+                <small class="text-muted"
+                  ><i class="bi bi-key-fill"></i> Requires: Moderate
+                  Members</small
+                >
               </div>
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start flex-wrap">
                   <code class="command-name">/unmute</code>
                   <code class="text-danger ms-2">&lt;user&gt;</code>
                 </div>
-                <p class="text-muted small mb-0 mt-1">Remove timeout from a user</p>
-                <small class="text-muted"><i class="bi bi-key-fill"></i> Requires: Moderate Members</small>
+                <p class="text-muted small mb-0 mt-1">
+                  Remove timeout from a user
+                </p>
+                <small class="text-muted"
+                  ><i class="bi bi-key-fill"></i> Requires: Moderate
+                  Members</small
+                >
               </div>
               <div class="command-item mb-0">
                 <div class="d-flex align-items-start flex-wrap">
@@ -639,29 +754,42 @@
                   <code class="text-danger ms-2">&lt;user&gt;</code>
                   <code class="text-secondary ms-1">[reason]</code>
                 </div>
-                <p class="text-muted small mb-0 mt-1">Issue a warning to a user</p>
-                <small class="text-muted"><i class="bi bi-key-fill"></i> Requires: Moderate Members</small>
+                <p class="text-muted small mb-0 mt-1">
+                  Issue a warning to a user
+                </p>
+                <small class="text-muted"
+                  ><i class="bi bi-key-fill"></i> Requires: Moderate
+                  Members</small
+                >
               </div>
             </div>
           </div>
 
           <div class="col-md-6">
             <div class="stat-card">
-              <h5><i class="bi bi-gear text-primary"></i> Channel Management</h5>
+              <h5>
+                <i class="bi bi-gear text-primary"></i> Channel Management
+              </h5>
               <hr />
               <div class="command-item mb-3">
                 <code class="command-name">/lock</code>
                 <p class="text-muted small mb-0 mt-1">
                   Prevent members from sending messages
                 </p>
-                <small class="text-muted"><i class="bi bi-key-fill"></i> Requires: Manage Channels</small>
+                <small class="text-muted"
+                  ><i class="bi bi-key-fill"></i> Requires: Manage
+                  Channels</small
+                >
               </div>
               <div class="command-item mb-3">
                 <code class="command-name">/unlock</code>
                 <p class="text-muted small mb-0 mt-1">
                   Allow members to send messages again
                 </p>
-                <small class="text-muted"><i class="bi bi-key-fill"></i> Requires: Manage Channels</small>
+                <small class="text-muted"
+                  ><i class="bi bi-key-fill"></i> Requires: Manage
+                  Channels</small
+                >
               </div>
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start flex-wrap">
@@ -671,7 +799,10 @@
                 <p class="text-muted small mb-0 mt-1">
                   Set delay between messages (0-21600s)
                 </p>
-                <small class="text-muted"><i class="bi bi-key-fill"></i> Requires: Manage Channels</small>
+                <small class="text-muted"
+                  ><i class="bi bi-key-fill"></i> Requires: Manage
+                  Channels</small
+                >
               </div>
               <div class="command-item mb-0">
                 <div class="d-flex align-items-start flex-wrap">
@@ -681,32 +812,55 @@
                 <p class="text-muted small mb-0 mt-1">
                   Bulk delete messages (up to 1000, max 14 days old)
                 </p>
-                <small class="text-muted"><i class="bi bi-key-fill"></i> Requires: Manage Messages</small>
+                <small class="text-muted"
+                  ><i class="bi bi-key-fill"></i> Requires: Manage
+                  Messages</small
+                >
               </div>
             </div>
           </div>
         </div>
 
         <div class="stat-card mt-3 border-warning">
-          <h5><i class="bi bi-shield-check text-warning"></i> Important Notes</h5>
+          <h5>
+            <i class="bi bi-shield-check text-warning"></i> Important Notes
+          </h5>
           <hr />
           <div class="alert alert-warning mb-0">
             <div class="row">
               <div class="col-md-6">
                 <strong><i class="bi bi-hierarchy"></i> Role Hierarchy</strong>
-                <p class="small mb-2">Bot cannot moderate users with roles higher than or equal to its highest role</p>
+                <p class="small mb-2">
+                  Bot cannot moderate users with roles higher than or equal to
+                  its highest role
+                </p>
               </div>
               <div class="col-md-6">
-                <strong><i class="bi bi-clock-history"></i> Message Age Limit</strong>
-                <p class="small mb-2">Purge command only works on messages less than 14 days old (Discord limitation)</p>
+                <strong
+                  ><i class="bi bi-clock-history"></i> Message Age Limit</strong
+                >
+                <p class="small mb-2">
+                  Purge command only works on messages less than 14 days old
+                  (Discord limitation)
+                </p>
               </div>
               <div class="col-md-6">
-                <strong><i class="bi bi-person-badge"></i> Permission Check</strong>
-                <p class="small mb-0">Both you and the bot must have the required permission for each command</p>
+                <strong
+                  ><i class="bi bi-person-badge"></i> Permission Check</strong
+                >
+                <p class="small mb-0">
+                  Both you and the bot must have the required permission for
+                  each command
+                </p>
               </div>
               <div class="col-md-6">
-                <strong><i class="bi bi-exclamation-triangle"></i> Timeout Duration</strong>
-                <p class="small mb-0">Mute duration can be up to 40,320 minutes (28 days)</p>
+                <strong
+                  ><i class="bi bi-exclamation-triangle"></i> Timeout
+                  Duration</strong
+                >
+                <p class="small mb-0">
+                  Mute duration can be up to 40,320 minutes (28 days)
+                </p>
               </div>
             </div>
           </div>
@@ -752,19 +906,27 @@
         </div>
 
         <p class="text-muted mb-4">
-          Complete command reference. Commands marked with <span class="badge bg-info text-dark"><i class="bi bi-chat-dots"></i> DM</span> work in DMs when
-          bot is installed as a User App.
+          Complete command reference. Commands marked with
+          <span class="badge bg-info text-dark"
+            ><i class="bi bi-chat-dots"></i> DM</span
+          >
+          work in DMs when bot is installed as a User App.
         </p>
 
         <div class="row">
           <div class="col-md-6">
             <div class="stat-card">
-              <h5><i class="bi bi-info-circle text-primary"></i> Information Commands</h5>
+              <h5>
+                <i class="bi bi-info-circle text-primary"></i> Information
+                Commands
+              </h5>
               <hr />
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start">
                   <code class="command-name">/ping</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                 </div>
                 <p class="text-muted small mb-0 mt-1">
                   Check bot latency and response time
@@ -773,7 +935,9 @@
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start">
                   <code class="command-name">/uptime</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                 </div>
                 <p class="text-muted small mb-0 mt-1">
                   See how long the bot has been running
@@ -782,7 +946,9 @@
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start">
                   <code class="command-name">/status</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                 </div>
                 <p class="text-muted small mb-0 mt-1">
                   View next auto-execution date for badge
@@ -791,7 +957,9 @@
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start">
                   <code class="command-name">/stats</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                 </div>
                 <p class="text-muted small mb-0 mt-1">
                   Bot performance and usage statistics
@@ -800,9 +968,13 @@
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start">
                   <code class="command-name">/botinfo</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                 </div>
-                <p class="text-muted small mb-0 mt-1">Detailed bot information</p>
+                <p class="text-muted small mb-0 mt-1">
+                  Detailed bot information
+                </p>
               </div>
               <div class="command-item mb-3">
                 <code class="command-name">/serverinfo</code>
@@ -813,10 +985,14 @@
               <div class="command-item mb-0">
                 <div class="d-flex align-items-start flex-wrap">
                   <code class="command-name">/userinfo</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                   <code class="text-secondary ms-2">[user]</code>
                 </div>
-                <p class="text-muted small mb-0 mt-1">Information about a user</p>
+                <p class="text-muted small mb-0 mt-1">
+                  Information about a user
+                </p>
               </div>
             </div>
           </div>
@@ -831,7 +1007,9 @@
                   <code class="text-danger ms-2">&lt;message&gt;</code>
                   <code class="text-secondary ms-1">[channel]</code>
                 </div>
-                <p class="text-muted small mb-0 mt-1">Send a message as the bot</p>
+                <p class="text-muted small mb-0 mt-1">
+                  Send a message as the bot
+                </p>
               </div>
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start flex-wrap">
@@ -846,7 +1024,9 @@
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start flex-wrap">
                   <code class="command-name">/remind</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                   <code class="text-danger ms-2">&lt;minutes&gt;</code>
                   <code class="text-danger ms-1">&lt;reminder&gt;</code>
                 </div>
@@ -857,14 +1037,18 @@
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start">
                   <code class="command-name">/invite</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                 </div>
                 <p class="text-muted small mb-0 mt-1">Get bot invite link</p>
               </div>
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start flex-wrap">
                   <code class="command-name">/avatar</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                   <code class="text-secondary ms-2">[user]</code>
                 </div>
                 <p class="text-muted small mb-0 mt-1">
@@ -874,7 +1058,9 @@
               <div class="command-item mb-0">
                 <div class="d-flex align-items-start flex-wrap">
                   <code class="command-name">/echo</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                   <code class="text-danger ms-2">&lt;message&gt;</code>
                 </div>
                 <p class="text-muted small mb-0 mt-1">Echo a message back</p>
@@ -884,12 +1070,16 @@
 
           <div class="col-md-6">
             <div class="stat-card">
-              <h5><i class="bi bi-emoji-smile text-warning"></i> Fun Commands</h5>
+              <h5>
+                <i class="bi bi-emoji-smile text-warning"></i> Fun Commands
+              </h5>
               <hr />
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start flex-wrap">
                   <code class="command-name">/8ball</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                   <code class="text-danger ms-2">&lt;question&gt;</code>
                 </div>
                 <p class="text-muted small mb-0 mt-1">Ask the magic 8-ball</p>
@@ -897,7 +1087,9 @@
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start flex-wrap">
                   <code class="command-name">/dice</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                   <code class="text-secondary ms-2">[sides]</code>
                 </div>
                 <p class="text-muted small mb-0 mt-1">
@@ -907,35 +1099,47 @@
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start">
                   <code class="command-name">/flip</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                 </div>
                 <p class="text-muted small mb-0 mt-1">Flip a coin</p>
               </div>
               <div class="command-item mb-3">
                 <div class="d-flex align-items-start">
                   <code class="command-name">/joke</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                 </div>
                 <p class="text-muted small mb-0 mt-1">Get a random joke</p>
               </div>
               <div class="command-item mb-0">
                 <div class="d-flex align-items-start">
                   <code class="command-name">/quote</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                 </div>
-                <p class="text-muted small mb-0 mt-1">Get an inspirational quote</p>
+                <p class="text-muted small mb-0 mt-1">
+                  Get an inspirational quote
+                </p>
               </div>
             </div>
           </div>
 
           <div class="col-md-6">
             <div class="stat-card">
-              <h5><i class="bi bi-translate text-info"></i> Translation Commands</h5>
+              <h5>
+                <i class="bi bi-translate text-info"></i> Translation Commands
+              </h5>
               <hr />
               <div class="command-item mb-2">
                 <div class="d-flex align-items-start flex-wrap">
                   <code class="command-name">/translate</code>
-                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <span class="badge bg-info text-dark ms-2"
+                    ><i class="bi bi-chat-dots"></i> DM</span
+                  >
                   <code class="text-danger ms-2">&lt;text&gt;</code>
                   <code class="text-secondary ms-1">[to]</code>
                   <code class="text-secondary ms-1">[from]</code>
@@ -946,9 +1150,13 @@
               </div>
               <div class="alert alert-light border mt-3 mb-0">
                 <small class="text-muted">
-                  <strong><i class="bi bi-info-circle"></i> Common codes:</strong><br>
-                  <code>en</code> English &nbsp;·&nbsp; <code>es</code> Spanish &nbsp;·&nbsp; <code>de</code> German<br>
-                  <code>fr</code> French &nbsp;·&nbsp; <code>ja</code> Japanese &nbsp;·&nbsp; <code>zh-CN</code> Chinese
+                  <strong
+                    ><i class="bi bi-info-circle"></i> Common codes:</strong
+                  ><br />
+                  <code>en</code> English &nbsp;·&nbsp; <code>es</code> Spanish
+                  &nbsp;·&nbsp; <code>de</code> German<br />
+                  <code>fr</code> French &nbsp;·&nbsp; <code>ja</code> Japanese
+                  &nbsp;·&nbsp; <code>zh-CN</code> Chinese
                 </small>
               </div>
             </div>

@@ -167,14 +167,16 @@ function startControlApi() {
     try {
       const avatarUrl = client.user.avatar
         ? `https://cdn.discordapp.com/avatars/${client.user.id}/${client.user.avatar}.png?size=256`
-        : `https://cdn.discordapp.com/embed/avatars/${parseInt(client.user.discriminator) % 5}.png`;
-      
+        : `https://cdn.discordapp.com/embed/avatars/${
+            parseInt(client.user.discriminator) % 5
+          }.png`;
+
       res.json({
         id: client.user.id,
         username: client.user.username,
         discriminator: client.user.discriminator,
         tag: client.user.tag,
-        avatarUrl: avatarUrl
+        avatarUrl: avatarUrl,
       });
     } catch (e) {
       res.status(500).json({ error: e.message });
@@ -184,12 +186,12 @@ function startControlApi() {
   // Get guilds bot is in
   app.get("/control/guilds", checkAuth, (req, res) => {
     try {
-      const guilds = client.guilds.cache.map(g => ({
+      const guilds = client.guilds.cache.map((g) => ({
         id: g.id,
         name: g.name,
         icon: g.icon,
         memberCount: g.memberCount,
-        joinedAt: g.joinedAt?.toISOString()
+        joinedAt: g.joinedAt?.toISOString(),
       }));
       res.json(guilds);
     } catch (e) {
@@ -210,7 +212,7 @@ function startControlApi() {
         name: guild.name,
         icon: guild.icon,
         memberCount: guild.memberCount,
-        joinedAt: guild.joinedAt?.toISOString()
+        joinedAt: guild.joinedAt?.toISOString(),
       });
     } catch (e) {
       res.status(500).json({ error: e.message });
@@ -1447,6 +1449,9 @@ client.once("clientReady", () => {
   } else {
     logger.log("⏸️  Auto-execution is disabled (ENABLE_AUTO_EXECUTION=false)");
   }
+
+  // Start control API for dashboard communication
+  startControlApi();
 });
 
 client.on("interactionCreate", async (interaction) => {
@@ -4313,9 +4318,6 @@ client.on("messageCreate", async (message) => {
       await message.reply({
         content: `❌ Unknown command \`${PREFIX}${command}\`. Use \`${PREFIX}help\` for available commands.`,
       });
-
-      // Start localhost control API
-      startControlApi();
     } catch (error) {
       console.error("❌ Error sending unknown command message:", error);
     }

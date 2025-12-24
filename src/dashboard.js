@@ -17,7 +17,8 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || process.env.DASHBOARD_PORT || 3000;
 const BOT_CONTROL_PORT = Number(process.env.BOT_CONTROL_PORT || 3210);
-const CONTROL_TOKEN = process.env.CONTROL_TOKEN || process.env.SESSION_SECRET || "";
+const CONTROL_TOKEN =
+  process.env.CONTROL_TOKEN || process.env.SESSION_SECRET || "";
 
 app.use(express.json());
 
@@ -28,16 +29,20 @@ async function callBotControl(path, method = "GET", body = null) {
     method,
     headers: {
       "Content-Type": "application/json",
-      "x-control-token": CONTROL_TOKEN
-    }
+      "x-control-token": CONTROL_TOKEN,
+    },
   };
   if (body) {
     options.body = JSON.stringify(body);
   }
   const response = await fetch(url);
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: "Unknown error" }));
-    throw new Error(error.error || `Request failed with status ${response.status}`);
+    const error = await response
+      .json()
+      .catch(() => ({ error: "Unknown error" }));
+    throw new Error(
+      error.error || `Request failed with status ${response.status}`
+    );
   }
   return response.json();
 }
@@ -55,15 +60,18 @@ app.get("/api/meta", async (req, res) => {
 
     res.json({
       botName: botInfo?.username || process.env.BOT_NAME || "aB0T Dashboard",
-      botAvatarUrl: botInfo?.avatarUrl || process.env.BOT_AVATAR_URL || 
+      botAvatarUrl:
+        botInfo?.avatarUrl ||
+        process.env.BOT_AVATAR_URL ||
         "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f916.png",
       botId: botInfo?.id || null,
-      botTag: botInfo?.tag || null
+      botTag: botInfo?.tag || null,
     });
   } catch (error) {
     res.json({
       botName: process.env.BOT_NAME || "aB0T Dashboard",
-      botAvatarUrl: process.env.BOT_AVATAR_URL ||
+      botAvatarUrl:
+        process.env.BOT_AVATAR_URL ||
         "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f916.png",
     });
   }
@@ -253,7 +261,7 @@ app.get("/api/guilds", isAuthenticated, async (req, res) => {
     const manageableGuilds = guilds.filter(
       (guild) => (guild.permissions & 0x20) === 0x20
     );
-    
+
     // Get bot guilds from control API
     let botGuilds = [];
     try {
@@ -262,15 +270,15 @@ app.get("/api/guilds", isAuthenticated, async (req, res) => {
       console.error("Failed to fetch bot guilds:", error);
       // Continue without bot status if control API is unavailable
     }
-    
-    const botGuildIds = new Set(botGuilds.map(g => g.id));
-    
+
+    const botGuildIds = new Set(botGuilds.map((g) => g.id));
+
     // Check which guilds the bot is in
-    const guildsWithBotStatus = manageableGuilds.map(guild => ({
+    const guildsWithBotStatus = manageableGuilds.map((guild) => ({
       ...guild,
-      botJoined: botGuildIds.has(guild.id)
+      botJoined: botGuildIds.has(guild.id),
     }));
-    
+
     res.json(guildsWithBotStatus);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -292,7 +300,10 @@ app.get("/api/guild/:guildId/bot-status", isAuthenticated, async (req, res) => {
 app.post("/api/guild/:guildId/leave", isAuthenticated, async (req, res) => {
   try {
     const { guildId } = req.params;
-    const result = await callBotControl(`/control/guild/${guildId}/leave`, "POST");
+    const result = await callBotControl(
+      `/control/guild/${guildId}/leave`,
+      "POST"
+    );
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
