@@ -66,6 +66,9 @@ let autoExecutionInterval = null;
 // Track last execution time
 let lastExecutionTime = Date.now();
 
+// Disabled commands list (runtime)
+let disabledCommands = new Set();
+
 // Track bot start time for uptime calculation
 const botStartTime = Date.now();
 
@@ -90,6 +93,8 @@ const translationStats = new Map(); // Map<guildId, { total: number, byLanguageP
 const DATA_DIR =
   process.env.RAILWAY_VOLUME_MOUNT_PATH || join(__dirname, "..", "data");
 const SERVERS_DIR = join(DATA_DIR, "servers");
+const BADGE_SETTINGS_PATH = join(DATA_DIR, "badge-settings.json");
+const DISABLED_COMMANDS_PATH = join(DATA_DIR, "disabled-commands.json");
 
 // Ensure data directory exists
 if (!fileOps.exists(DATA_DIR)) {
@@ -169,6 +174,51 @@ function loadTwitchData() {
     logConfigurationStatus("Twitch configuration", loadedCount, loadedServers);
   } catch (error) {
     logger.error(`Error loading Twitch data: ${error.message}`);
+  }
+}
+
+// Load badge settings from disk (persisted dashboard state)
+function loadBadgeSettings() {
+  try {
+    if (!fileOps.exists(DATA_DIR)) {
+      mkdirSync(DATA_DIR, { recursive: true });
+    }
+    const data = fileOps.readJSON(BADGE_SETTINGS_PATH);
+    if (data) {
+      if (typeof data.autoExecutionEnabled === "boolean") {
+        autoExecutionEnabled = data.autoExecutionEnabled;
+      }
+      if (typeof data.lastExecutionTime === "number") {
+        lastExecutionTime = data.lastExecutionTime;
+      }
+    }
+  } catch (e) {
+    logger.warn(`Could not load badge settings: ${e.message}`);
+  }
+}
+
+function saveBadgeSettings() {
+  try {
+    const payload = {
+      autoExecutionEnabled,
+      lastExecutionTime,
+      intervalDays: AUTO_EXECUTE_INTERVAL_DAYS,
+    };
+    if (!fileOps.exists(DATA_DIR)) {
+      mkdirSync(DATA_DIR, { recursive: true });
+    }
+    writeFileSync(BADGE_SETTINGS_PATH, JSON.stringify(payload, null, 2));
+  } catch (e) {
+    logger.warn(`Could not save badge settings: ${e.message}`);
+  }
+}
+
+function loadDisabledCommands() {
+  try {
+    const data = fileOps.readJSON(DISABLED_COMMANDS_PATH);
+    disabledCommands = new Set(Array.isArray(data) ? data : data?.names || []);
+  } catch (e) {
+    // ignore if not found
   }
 }
 
@@ -854,6 +904,7 @@ async function autoExecuteCommand() {
     });
 
     lastExecutionTime = Date.now();
+    saveBadgeSettings();
     const nextExecutionDate = new Date(
       lastExecutionTime + AUTO_EXECUTE_INTERVAL_MS
     );
@@ -998,11 +1049,13 @@ function setupAutoExecution() {
 function enableAutoExecutionRuntime() {
   autoExecutionEnabled = true;
   setupAutoExecution();
+  saveBadgeSettings();
 }
 
 function disableAutoExecutionRuntime() {
   autoExecutionEnabled = false;
   clearAutoExecutionTimers();
+  saveBadgeSettings();
 }
 
 // Check Twitch streamers for live status
@@ -1210,6 +1263,12 @@ client.once("clientReady", () => {
   loadTranslationData();
   loadTranslationStats();
 
+  // Load badge settings and disabled commands
+  loadBadgeSettings();
+  loadDisabledCommands();
+  // Periodically refresh disabled commands to reflect dashboard changes quickly
+  setInterval(loadDisabledCommands, 15000);
+
   // Initialize Twitch API if credentials are available
   if (process.env.TWITCH_CLIENT_ID && process.env.TWITCH_ACCESS_TOKEN) {
     twitchAPI = new TwitchAPI(
@@ -1243,6 +1302,18 @@ client.once("clientReady", () => {
 
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
+
+  // Respect disabled commands configured via dashboard
+  try {
+    if (disabledCommands.has(interaction.commandName)) {
+      await interaction.reply({
+        content:
+          "⚠️ This command is currently disabled by the server administrator.",
+        ephemeral: true,
+      });
+      return;
+    }
+  } catch (_) {}
 
   // Help command
   if (interaction.commandName === "help") {
@@ -1322,7 +1393,9 @@ client.on("interactionCreate", async (interaction) => {
         `\`/logs [lines]\` – View audit logs\n` +
         `\`/config view\` – View bot configuration\n` +
         `\`/settings view\` – View server settings\n` +
-        `\`/auto-execution <enable|disable|status>\` – Control auto-execution\n` +
+        (disabledCommands.has("auto-execution")
+          ? ""
+          : `\`/auto-execution <enable|disable|status>\` – Control auto-execution\n`) +
         `\`/backup\` – View server backup info\n` +
         `\`/tracking toggle\` – Enable/disable activity tracking\n` +
         `\`/tracking channel\` – Set tracking log channel\n` +

@@ -10,10 +10,10 @@ async function checkAuth() {
   try {
     const response = await fetch("/api/user");
     if (!response.ok) {
-      console.error("Auth check failed:", response.status);
+    const r = await fetch(currentGuildId ? `/api/commands?guildId=${currentGuildId}` : "/api/commands");
       window.location.href = "/";
       return false;
-    }
+    renderCommandsList(data.commands || []);
     const user = await response.json();
     document.getElementById(
       "userInfo"
@@ -27,7 +27,14 @@ async function checkAuth() {
   }
 }
 
-// Load user's guilds
+  const globalCount = commands.filter(c=>c.scope==='global').length;
+  const guildCount = commands.filter(c=>c.scope==='guild').length;
+  const scopeInfo = currentGuildId
+    ? `<div class="alert alert-info py-2 px-3 mb-2"><i class="bi bi-info-circle"></i> Showing global commands and commands registered in the selected server.</div>`
+    : `<div class="alert alert-secondary py-2 px-3 mb-2"><i class="bi bi-info-circle"></i> No server selected — showing global commands only.</div>`;
+
+  container.innerHTML = scopeInfo +
+    commands
 async function loadGuilds() {
   const container = document.getElementById("serversList");
 
@@ -901,6 +908,14 @@ function showPage(pageName) {
   if (pageName === "invite") {
     loadInviteLink();
   }
+
+  // Load badge and commands management when those pages are shown
+  if (pageName === "badge") {
+    loadBadgeStatus();
+  }
+  if (pageName === "commands") {
+    reloadCommands();
+  }
 }
 
 // Load bot invite link
@@ -1034,3 +1049,163 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+// ===== Badge Management =====
+async function loadBadgeStatus() {
+  try {
+    const r = await fetch("/api/badge/status");
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Failed to load badge status");
+
+    const enabled = !!data.autoExecutionEnabled;
+    const pill = document.getElementById("badgeEnabledPill");
+    const toggle = document.getElementById("badgeEnabled");
+    const interval = document.getElementById("badgeInterval");
+    const next = document.getElementById("nextExecution");
+
+    if (toggle) toggle.checked = enabled;
+    if (pill) {
+      pill.textContent = enabled ? "ENABLED" : "DISABLED";
+      pill.className = `badge ${enabled ? "bg-success" : "bg-secondary"} me-2`;
+    }
+    if (interval && typeof data.intervalDays === "number")
+      interval.value = data.intervalDays;
+    if (next && data.nextExecutionHuman)
+      next.textContent = data.nextExecutionHuman;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function saveBadgeSettings() {
+  try {
+    const toggle = document.getElementById("badgeEnabled");
+    const interval = document.getElementById("badgeInterval");
+    const payload = {
+      autoExecutionEnabled: !!(toggle && toggle.checked),
+      intervalDays: Math.max(
+        1,
+        Math.min(60, parseInt(interval?.value || "30", 10))
+      ),
+    };
+    const r = await fetch("/api/badge/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Failed to save");
+    loadBadgeStatus();
+  } catch (e) {
+    alert("Failed to save badge settings: " + e.message);
+  }
+}
+
+// ===== Commands Management =====
+async function reloadCommands() {
+  try {
+    const list = document.getElementById("commandsList");
+    if (list)
+      list.innerHTML = '<div class="text-muted">Loading commands...</div>';
+    const r = await fetch("/api/commands");
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Failed to fetch commands");
+    renderCommandsList(data.commands || []);
+  } catch (e) {
+    const list = document.getElementById("commandsList");
+    if (list)
+      list.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> ${e.message}</div>`;
+  }
+}
+
+function renderCommandsList(commands) {
+  const container = document.getElementById("commandsList");
+  if (!container) return;
+  if (!commands.length) {
+    container.innerHTML = '<div class="text-muted">No commands found.</div>';
+    return;
+  }
+  container.innerHTML = commands
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((c) => {
+      const badge =
+        c.scope === "guild"
+          ? '<span class="badge bg-secondary ms-2">Guild</span>'
+          : '<span class="badge bg-primary ms-2">Global</span>';
+      const toggleId = `disable_${c.scope}_${c.id}`;
+      return `
+        <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2">
+          <div>
+            <strong>/${c.name}</strong> <small class="text-muted">${
+        c.description || ""
+      }</small> ${badge}
+            ${
+              c.disabled
+                ? '<span class="badge bg-warning text-dark ms-2">Runtime disabled</span>'
+                : ""
+            }
+          </div>
+          <div class="d-flex align-items-center">
+            <div class="form-check form-switch me-3">
+              <input class="form-check-input" type="checkbox" id="${toggleId}" ${
+        c.disabled ? "" : "checked"
+      } onchange="toggleCommandRuntime('${c.name}', this.checked)">
+              <label class="form-check-label" for="${toggleId}">Runtime</label>
+            </div>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteCommand('${
+              c.id
+            }', '${c.scope}')"><i class="bi bi-trash"></i></button>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+async function toggleCommandRuntime(name, enabled) {
+  try {
+    const r = await fetch("/api/commands/disable", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, disabled: !enabled }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Failed to update");
+    reloadCommands();
+  } catch (e) {
+    alert("Failed to update command: " + e.message);
+  }
+}
+
+async function deleteCommand(id, scope) {
+  if (
+    !confirm(
+      "Delete this registered command? This hides it from users until re-registered."
+    )
+  )
+    return;
+  try {
+    const r = await fetch("/api/commands/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ commandId: id, scope }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Delete failed");
+    reloadCommands();
+  } catch (e) {
+    alert("Failed to delete command: " + e.message);
+  }
+}
+
+async function reRegisterAll() {
+  if (!confirm("Re-register all commands from source now?")) return;
+  try {
+    const r = await fetch("/api/commands/register-all", { method: "POST" });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Failed to re-register");
+    reloadCommands();
+  } catch (e) {
+    alert("Failed to re-register: " + e.message);
+  }
+}
