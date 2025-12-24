@@ -168,6 +168,11 @@
       #sidebarServerSelector option:checked {
         background: #667eea;
       }
+      #currentServerDisplay:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(102, 126, 234, 0.5);
+        transform: translateY(-1px);
+      }
       .server-item {
         display: flex;
         align-items: center;
@@ -302,40 +307,24 @@
           "
           >Select Server</label
         >
-        <select
-          id="sidebarServerSelector"
-          class="form-select"
-          style="
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            font-size: 0.9rem;
-            cursor: pointer;
-          "
-          onchange="handleSidebarServerChange(this.value)"
-        >
-          <option value="" style="background: #2c3e50; color: white">
-            Choose a server...
-          </option>
-        </select>
-      </div>
-
-      <!-- Current Server Display -->
-      <div class="px-3 mb-3" id="currentServerDisplay" style="display: none">
         <div
+          id="currentServerDisplay"
           class="card"
           style="
             background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(102, 126, 234, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s;
           "
+          onclick="openSidebarSelector()"
         >
           <div class="card-body p-2">
             <div class="d-flex align-items-center">
               <img
                 id="sidebarServerIcon"
-                src=""
-                alt=""
+                src="https://cdn.discordapp.com/embed/avatars/0.png"
+                alt="Server"
                 class="rounded-circle me-2"
                 width="36"
                 height="36"
@@ -353,20 +342,36 @@
                     white-space: nowrap;
                   "
                 >
-                  None
+                  Choose a server...
                 </div>
                 <small
+                  id="sidebarServerStatus"
                   style="
                     color: rgba(102, 126, 234, 0.9);
                     font-size: 0.7rem;
                     font-weight: 500;
+                    display: none;
                   "
                   ><i class="bi bi-check-circle-fill"></i> Active</small
                 >
               </div>
+              <i
+                class="bi bi-chevron-down"
+                style="color: rgba(255, 255, 255, 0.5); font-size: 0.9rem"
+              ></i>
             </div>
           </div>
         </div>
+        <select
+          id="sidebarServerSelector"
+          class="form-select"
+          style="display: none"
+          onchange="handleSidebarServerChange(this.value)"
+        >
+          <option value="" style="background: #2c3e50; color: white">
+            Choose a server...
+          </option>
+        </select>
       </div>
 
       <nav>

@@ -40,12 +40,12 @@ async function checkAuth() {
     }
     const user = await response.json();
 
-    // Update username
+    // Update username with full Discord tag
     const userInfoEl = document.getElementById("userInfo");
     if (userInfoEl) {
       userInfoEl.textContent =
         user.discriminator === "0"
-          ? user.username
+          ? `@${user.username}`
           : `${user.username}#${user.discriminator}`;
     }
 
@@ -71,6 +71,11 @@ function handleSidebarServerChange(guildId) {
   if (guild) {
     selectGuild(guild.id, guild.name);
   }
+  // Hide dropdown after selection
+  const selector = document.getElementById("sidebarServerSelector");
+  if (selector) {
+    selector.style.display = "none";
+  }
 }
 
 // Populate sidebar server selector
@@ -86,6 +91,22 @@ function populateSidebarServerSelector() {
         return `<option value="${guild.id}" ${selected} style="background: #2c3e50; color: white;">${guild.name}</option>`;
       })
       .join("");
+
+  // Show dropdown when card is clicked
+  selector.size = Math.min(guilds.length + 1, 8);
+  selector.onblur = function () {
+    this.style.display = "none";
+    this.size = 1;
+  };
+}
+
+// Open the hidden dropdown from the sidebar card
+function openSidebarSelector() {
+  const selector = document.getElementById("sidebarServerSelector");
+  if (!selector || !guilds.length) return;
+  selector.style.display = "block";
+  selector.size = Math.min(guilds.length + 1, 8);
+  selector.focus();
 }
 
 // (removed stray commands rendering fragment)
@@ -272,10 +293,13 @@ function updateServerHeaders() {
   const sidebarDisplay = document.getElementById("currentServerDisplay");
   const sidebarIcon = document.getElementById("sidebarServerIcon");
   const sidebarName = document.getElementById("sidebarServerName");
+  const sidebarStatus = document.getElementById("sidebarServerStatus");
   if (sidebarDisplay && sidebarIcon && sidebarName) {
     sidebarIcon.src = iconUrl;
     sidebarName.textContent = currentGuild.name;
-    sidebarDisplay.style.display = "block";
+    if (sidebarStatus) {
+      sidebarStatus.style.display = currentGuild.botJoined ? "block" : "none";
+    }
   }
 
   // Populate server switcher dropdowns
