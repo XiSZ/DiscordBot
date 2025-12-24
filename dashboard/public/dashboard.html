@@ -150,6 +150,18 @@
         <a href="#" class="nav-link" data-page="translation">
           <i class="bi bi-translate"></i> Translation
         </a>
+        <a href="#" class="nav-link" data-page="badge">
+          <i class="bi bi-shield-check"></i> Badge Management
+        </a>
+        <a href="#" class="nav-link" data-page="twitch">
+          <i class="bi bi-broadcast"></i> Twitch Alerts
+        </a>
+        <a href="#" class="nav-link" data-page="moderation">
+          <i class="bi bi-shield-lock"></i> Moderation
+        </a>
+        <a href="#" class="nav-link" data-page="commands">
+          <i class="bi bi-terminal"></i> Commands
+        </a>
         <a href="#" class="nav-link" data-page="stats">
           <i class="bi bi-bar-chart"></i> Statistics
         </a>
@@ -223,6 +235,401 @@
 
         <div id="translationContent">
           <p class="text-muted">Select a server first</p>
+        </div>
+      </div>
+
+      <!-- Badge Management Page -->
+      <div id="badgePage" class="page" style="display: none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-shield-check"></i> Badge Management</h2>
+          <button class="btn btn-secondary" onclick="showPage('servers')">
+            <i class="bi bi-arrow-left"></i> Back to Servers
+          </button>
+        </div>
+
+        <p class="text-muted mb-4">
+          Monitor and control the Active Developer Badge automation. The bot
+          automatically runs commands every 30 days to maintain your badge
+          eligibility.
+        </p>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="stat-card">
+              <h5><i class="bi bi-clock-history"></i> Automation Status</h5>
+              <hr />
+              <div class="mb-3">
+                <label class="text-muted">Auto-Execution</label>
+                <div class="d-flex align-items-center">
+                  <span class="badge bg-success me-2" style="font-size: 1rem"
+                    >ENABLED</span
+                  >
+                  <small class="text-muted">Commands run automatically</small>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="text-muted">Interval</label>
+                <div>
+                  <strong>30 days</strong>
+                  <small class="text-muted d-block"
+                    >Ensures badge remains active</small
+                  >
+                </div>
+              </div>
+              <div class="mb-0">
+                <label class="text-muted">Next Execution</label>
+                <div>
+                  <strong id="nextExecution">Loading...</strong>
+                  <small class="text-muted d-block">Approximate time</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="stat-card">
+              <h5>
+                <i class="bi bi-info-circle"></i> About Active Developer Badge
+              </h5>
+              <hr />
+              <p class="text-muted mb-2">
+                Discord requires developers to actively use at least one slash
+                command within 60 days to maintain Active Developer status.
+              </p>
+              <ul class="mb-3">
+                <li>Automatic command execution every 30 days</li>
+                <li>Registers commands on startup</li>
+                <li>Auto-reconnect on disconnection</li>
+                <li>Works in servers, DMs, and group DMs</li>
+              </ul>
+              <div class="alert alert-info mb-0">
+                <i class="bi bi-lightbulb"></i> <strong>Tip:</strong> Use
+                <code>/status</code> in Discord to check next execution date
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Twitch Alerts Page -->
+      <div id="twitchPage" class="page" style="display: none">
+        <!-- Server Header -->
+        <div
+          class="stat-card mb-3"
+          id="twitchServerHeader"
+          style="display: none"
+        >
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <img
+                id="twitchServerIcon"
+                src=""
+                alt=""
+                class="rounded-circle me-3"
+                width="50"
+                height="50"
+              />
+              <div>
+                <h5 class="mb-0" id="twitchServerName">Loading...</h5>
+                <small class="text-muted">Configuring Twitch alerts</small>
+              </div>
+            </div>
+            <div class="dropdown">
+              <button
+                class="btn btn-outline-primary dropdown-toggle"
+                type="button"
+                data-bs-toggle="dropdown"
+              >
+                <i class="bi bi-arrow-left-right"></i> Switch Server
+              </button>
+              <ul class="dropdown-menu" id="twitchServerSwitcher">
+                <!-- Populated by JS -->
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-broadcast"></i> Twitch Alerts</h2>
+          <button class="btn btn-secondary" onclick="showPage('servers')">
+            <i class="bi bi-arrow-left"></i> Back to Servers
+          </button>
+        </div>
+
+        <div id="twitchContent">
+          <p class="text-muted">Select a server first</p>
+        </div>
+      </div>
+
+      <!-- Moderation Page -->
+      <div id="moderationPage" class="page" style="display: none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-shield-lock"></i> Moderation Tools</h2>
+          <button class="btn btn-secondary" onclick="showPage('servers')">
+            <i class="bi bi-arrow-left"></i> Back to Servers
+          </button>
+        </div>
+
+        <p class="text-muted mb-4">
+          Comprehensive moderation commands to manage your server. All commands
+          respect Discord permissions.
+        </p>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="stat-card">
+              <h5><i class="bi bi-person-x"></i> Member Actions</h5>
+              <hr />
+              <div class="mb-3">
+                <strong>/kick</strong> <code>&lt;user&gt; [reason]</code>
+                <p class="text-muted small mb-0">
+                  Remove a user from the server
+                </p>
+              </div>
+              <div class="mb-3">
+                <strong>/ban</strong> <code>&lt;user&gt; [reason]</code>
+                <p class="text-muted small mb-0">Permanently ban a user</p>
+              </div>
+              <div class="mb-3">
+                <strong>/mute</strong>
+                <code>&lt;user&gt; &lt;minutes&gt; [reason]</code>
+                <p class="text-muted small mb-0">Timeout a user temporarily</p>
+              </div>
+              <div class="mb-3">
+                <strong>/unmute</strong> <code>&lt;user&gt;</code>
+                <p class="text-muted small mb-0">Remove timeout from a user</p>
+              </div>
+              <div class="mb-0">
+                <strong>/warn</strong> <code>&lt;user&gt; [reason]</code>
+                <p class="text-muted small mb-0">Issue a warning to a user</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="stat-card">
+              <h5><i class="bi bi-gear"></i> Channel Management</h5>
+              <hr />
+              <div class="mb-3">
+                <strong>/lock</strong>
+                <p class="text-muted small mb-0">
+                  Prevent members from sending messages
+                </p>
+              </div>
+              <div class="mb-3">
+                <strong>/unlock</strong>
+                <p class="text-muted small mb-0">
+                  Allow members to send messages again
+                </p>
+              </div>
+              <div class="mb-3">
+                <strong>/slowmode</strong> <code>&lt;seconds&gt;</code>
+                <p class="text-muted small mb-0">
+                  Set delay between messages (0-21600s)
+                </p>
+              </div>
+              <div class="mb-0">
+                <strong>/purge</strong> <code>[amount]</code>
+                <p class="text-muted small mb-0">
+                  Bulk delete messages (up to 1000, max 14 days old)
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card mt-3">
+          <h5><i class="bi bi-shield-check"></i> Permission Requirements</h5>
+          <hr />
+          <div class="row">
+            <div class="col-md-4">
+              <strong>Kick Members</strong>
+              <p class="text-muted small">/kick</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Ban Members</strong>
+              <p class="text-muted small">/ban</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Moderate Members</strong>
+              <p class="text-muted small">/mute, /unmute, /warn</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Manage Channels</strong>
+              <p class="text-muted small">/lock, /unlock, /slowmode</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Manage Messages</strong>
+              <p class="text-muted small">/purge, /say</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commands Page -->
+      <div id="commandsPage" class="page" style="display: none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-terminal"></i> Bot Commands</h2>
+          <button class="btn btn-secondary" onclick="showPage('servers')">
+            <i class="bi bi-arrow-left"></i> Back to Servers
+          </button>
+        </div>
+
+        <p class="text-muted mb-4">
+          Complete command reference. Commands marked with 💬 work in DMs when
+          bot is installed as a User App.
+        </p>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="stat-card">
+              <h5><i class="bi bi-info-circle"></i> Information Commands 💬</h5>
+              <hr />
+              <div class="mb-2">
+                <strong>/ping</strong> 💬
+                <p class="text-muted small mb-0">
+                  Check bot latency and response time
+                </p>
+              </div>
+              <div class="mb-2">
+                <strong>/uptime</strong> 💬
+                <p class="text-muted small mb-0">
+                  See how long the bot has been running
+                </p>
+              </div>
+              <div class="mb-2">
+                <strong>/status</strong> 💬
+                <p class="text-muted small mb-0">
+                  View next auto-execution date for badge
+                </p>
+              </div>
+              <div class="mb-2">
+                <strong>/stats</strong> 💬
+                <p class="text-muted small mb-0">
+                  Bot performance and usage statistics
+                </p>
+              </div>
+              <div class="mb-2">
+                <strong>/botinfo</strong> 💬
+                <p class="text-muted small mb-0">Detailed bot information</p>
+              </div>
+              <div class="mb-2">
+                <strong>/serverinfo</strong>
+                <p class="text-muted small mb-0">
+                  Server details and statistics
+                </p>
+              </div>
+              <div class="mb-0">
+                <strong>/userinfo</strong> 💬 <code>[user]</code>
+                <p class="text-muted small mb-0">Information about a user</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="stat-card">
+              <h5><i class="bi bi-tools"></i> Utility Commands</h5>
+              <hr />
+              <div class="mb-2">
+                <strong>/say</strong> <code>&lt;message&gt; [channel]</code>
+                <p class="text-muted small mb-0">Send a message as the bot</p>
+              </div>
+              <div class="mb-2">
+                <strong>/poll</strong>
+                <code>&lt;question&gt; &lt;options...&gt;</code>
+                <p class="text-muted small mb-0">
+                  Create a poll with reactions (2-5 options)
+                </p>
+              </div>
+              <div class="mb-2">
+                <strong>/remind</strong> 💬
+                <code>&lt;minutes&gt; &lt;reminder&gt;</code>
+                <p class="text-muted small mb-0">
+                  Set a DM reminder (1-10080 minutes)
+                </p>
+              </div>
+              <div class="mb-2">
+                <strong>/invite</strong> 💬
+                <p class="text-muted small mb-0">Get bot invite link</p>
+              </div>
+              <div class="mb-2">
+                <strong>/avatar</strong> 💬 <code>[user]</code>
+                <p class="text-muted small mb-0">
+                  View user's avatar in full size
+                </p>
+              </div>
+              <div class="mb-0">
+                <strong>/echo</strong> 💬 <code>&lt;message&gt;</code>
+                <p class="text-muted small mb-0">Echo a message back</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="stat-card">
+              <h5><i class="bi bi-emoji-smile"></i> Fun Commands 💬</h5>
+              <hr />
+              <div class="mb-2">
+                <strong>/8ball</strong> 💬 <code>&lt;question&gt;</code>
+                <p class="text-muted small mb-0">Ask the magic 8-ball</p>
+              </div>
+              <div class="mb-2">
+                <strong>/dice</strong> 💬 <code>[sides]</code>
+                <p class="text-muted small mb-0">
+                  Roll a dice (default: 6 sides)
+                </p>
+              </div>
+              <div class="mb-2">
+                <strong>/flip</strong> 💬
+                <p class="text-muted small mb-0">Flip a coin</p>
+              </div>
+              <div class="mb-2">
+                <strong>/joke</strong> 💬
+                <p class="text-muted small mb-0">Get a random joke</p>
+              </div>
+              <div class="mb-0">
+                <strong>/quote</strong> 💬
+                <p class="text-muted small mb-0">Get an inspirational quote</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="stat-card">
+              <h5><i class="bi bi-translate"></i> Translation Commands</h5>
+              <hr />
+              <div class="mb-0">
+                <strong>/translate</strong> 💬
+                <code>&lt;text&gt; [to] [from]</code>
+                <p class="text-muted small mb-0">
+                  Translate text to another language
+                </p>
+              </div>
+              <small class="text-muted d-block mt-2">
+                <strong>Common codes:</strong> en (English), es (Spanish), de
+                (German), fr (French), ja (Japanese), zh-CN (Chinese)
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card mt-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="mb-1">
+                <i class="bi bi-book"></i> Full Documentation
+              </h5>
+              <p class="text-muted mb-0">Detailed command usage and examples</p>
+            </div>
+            <a
+              class="btn btn-primary"
+              href="https://github.com/HenryLok0/Auto-Discord-Developer-Badge#command-list"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <i class="bi bi-box-arrow-up-right"></i> View on GitHub
+            </a>
+          </div>
         </div>
       </div>
 
