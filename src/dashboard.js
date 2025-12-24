@@ -35,16 +35,24 @@ async function callBotControl(path, method = "GET", body = null) {
   if (body) {
     options.body = JSON.stringify(body);
   }
-  const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ error: "Unknown error" }));
-    throw new Error(
-      error.error || `Request failed with status ${response.status}`
-    );
+  try {
+    console.log(`[Dashboard] Calling bot control API: ${url}`);
+    const response = await fetch(url);
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ error: "Unknown error" }));
+      throw new Error(
+        error.error || `Request failed with status ${response.status}`
+      );
+    }
+    const data = await response.json();
+    console.log(`[Dashboard] Control API response successful`);
+    return data;
+  } catch (error) {
+    console.error(`[Dashboard] Control API error:`, error.message);
+    throw error;
   }
-  return response.json();
 }
 
 // Public metadata for login screen
@@ -58,21 +66,19 @@ app.get("/api/meta", async (req, res) => {
       console.error("Failed to fetch bot info from control API:", error);
     }
 
-    res.json({
+    // If we got bot info, use it. Otherwise fall back to environment variables
+    const response = {
       botName: botInfo?.username || process.env.BOT_NAME || "aB0T Dashboard",
-      botAvatarUrl:
-        botInfo?.avatarUrl ||
-        process.env.BOT_AVATAR_URL ||
-        "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f916.png",
+      botAvatarUrl: botInfo?.avatarUrl || process.env.BOT_AVATAR_URL || null,
       botId: botInfo?.id || null,
       botTag: botInfo?.tag || null,
-    });
+    };
+
+    res.json(response);
   } catch (error) {
     res.json({
       botName: process.env.BOT_NAME || "aB0T Dashboard",
-      botAvatarUrl:
-        process.env.BOT_AVATAR_URL ||
-        "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f916.png",
+      botAvatarUrl: process.env.BOT_AVATAR_URL || null,
     });
   }
 });
@@ -266,12 +272,21 @@ app.get("/api/guilds", isAuthenticated, async (req, res) => {
     let botGuilds = [];
     try {
       botGuilds = await callBotControl("/control/guilds");
+      console.log(
+        `[API] Successfully fetched ${botGuilds.length} bot guilds from control API`
+      );
     } catch (error) {
-      console.error("Failed to fetch bot guilds:", error);
+      console.error(
+        "[API] Failed to fetch bot guilds from control API:",
+        error.message
+      );
       // Continue without bot status if control API is unavailable
     }
 
     const botGuildIds = new Set(botGuilds.map((g) => g.id));
+    console.log(
+      `[API] Bot is in guilds: ${Array.from(botGuildIds).join(", ") || "none"}`
+    );
 
     // Check which guilds the bot is in
     const guildsWithBotStatus = manageableGuilds.map((guild) => ({
@@ -281,6 +296,7 @@ app.get("/api/guilds", isAuthenticated, async (req, res) => {
 
     res.json(guildsWithBotStatus);
   } catch (error) {
+    console.error("[API] Error in /api/guilds:", error);
     res.status(500).json({ error: error.message });
   }
 });

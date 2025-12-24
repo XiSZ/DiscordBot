@@ -128,9 +128,18 @@ function startControlApi() {
   app.use(express.json());
 
   function checkAuth(req, res, next) {
-    if (!TOKEN) return next(); // allow if no token set
+    if (!TOKEN) {
+      console.log("[Control API] No token configured, allowing all requests");
+      return next();
+    }
     const tok = req.headers["x-control-token"];
-    if (tok && tok === TOKEN) return next();
+    if (tok && tok === TOKEN) {
+      console.log("[Control API] Auth successful");
+      return next();
+    }
+    console.log(
+      `[Control API] Auth failed - received: "${tok}", expected: "${TOKEN}"`
+    );
     return res.status(401).json({ error: "Unauthorized" });
   }
 
@@ -193,8 +202,14 @@ function startControlApi() {
         memberCount: g.memberCount,
         joinedAt: g.joinedAt?.toISOString(),
       }));
+      console.log(
+        `[Control API] /control/guilds: Returning ${
+          guilds.length
+        } guilds (IDs: ${guilds.map((g) => g.id).join(", ") || "none"})`
+      );
       res.json(guilds);
     } catch (e) {
+      console.error(`[Control API] /control/guilds error:`, e);
       res.status(500).json({ error: e.message });
     }
   });
@@ -235,6 +250,15 @@ function startControlApi() {
 
   // Bind to localhost only for safety
   app.listen(CONTROL_PORT, "127.0.0.1", () => {
+    console.log(`[Control API] Started on 127.0.0.1:${CONTROL_PORT}`);
+    console.log(
+      `[Control API] Bot has access to ${client.guilds.cache.size} guilds`
+    );
+    console.log(
+      `[Control API] Guild IDs: ${
+        Array.from(client.guilds.cache.keys()).join(", ") || "none"
+      }`
+    );
     logger.info(`Control API listening on 127.0.0.1:${CONTROL_PORT}`);
   });
 }
