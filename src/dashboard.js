@@ -256,7 +256,7 @@ app.get("/api/badge/status", isAuthenticated, (req, res) => {
 });
 
 // Badge: update settings (enable/disable, optional intervalDays)
-app.post("/api/badge/settings", isAuthenticated, (req, res) => {
+app.post("/api/badge/settings", isAuthenticated, async (req, res) => {
   try {
     const { autoExecutionEnabled, intervalDays } = req.body || {};
     const current = readJSON(BADGE_SETTINGS_PATH, {
@@ -273,6 +273,16 @@ app.post("/api/badge/settings", isAuthenticated, (req, res) => {
     )
       current.intervalDays = intervalDays;
     writeJSON(BADGE_SETTINGS_PATH, current);
+
+    try {
+      await callBotControl("/control/reload-badge", "POST");
+    } catch (err) {
+      console.warn(
+        "[API] Failed to notify bot about badge setting change:",
+        err.message
+      );
+    }
+
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -593,6 +603,15 @@ app.post("/api/guild/:guildId/config", isAuthenticated, async (req, res) => {
     // Save config
     writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
 
+    try {
+      await callBotControl("/control/reload-translation", "POST");
+    } catch (err) {
+      console.warn(
+        `[API] Failed to ask bot to reload translation config for ${guildId}:`,
+        err.message
+      );
+    }
+
     res.json({ success: true, message: "Configuration updated successfully!" });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -737,6 +756,16 @@ app.post(
             : current.events || {},
       };
       writeJSON(configPath, next);
+
+      try {
+        await callBotControl("/control/reload-tracking", "POST");
+      } catch (err) {
+        console.warn(
+          `[API] Failed to ask bot to reload tracking config for ${guildId}:`,
+          err.message
+        );
+      }
+
       res.json({ success: true, message: "Tracking configuration saved." });
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -748,7 +777,7 @@ app.post(
 app.post("/api/tracking/reload", isAuthenticated, async (req, res) => {
   try {
     const r = await fetch(
-      `http://127.0.0.1:${CONTROL_PORT}/control/reload-tracking`,
+      `http://127.0.0.1:${BOT_CONTROL_PORT}/control/reload-tracking`,
       {
         method: "POST",
         headers: CONTROL_TOKEN
@@ -802,6 +831,15 @@ app.post(
         allowDuplicates: allowDuplicates === true,
       };
       writeJSON(configPath, next);
+
+      try {
+        await callBotControl("/control/reload-twitch", "POST");
+      } catch (err) {
+        console.warn(
+          `[API] Failed to ask bot to reload Twitch config for ${guildId}:`,
+          err.message
+        );
+      }
       res.json({ success: true, message: "Twitch configuration saved." });
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -877,7 +915,7 @@ app.get("/api/commands", isAuthenticated, async (req, res) => {
 });
 
 // Commands: toggle disabled state (runtime only)
-app.post("/api/commands/disable", isAuthenticated, (req, res) => {
+app.post("/api/commands/disable", isAuthenticated, async (req, res) => {
   try {
     const { name, disabled } = req.body || {};
     if (!name) return res.status(400).json({ error: "Missing command name" });
@@ -886,6 +924,13 @@ app.post("/api/commands/disable", isAuthenticated, (req, res) => {
     if (disabled) set.add(name);
     else set.delete(name);
     writeJSON(DISABLED_COMMANDS_PATH, Array.from(set));
+    try {
+      await callBotControl("/control/reload-disabled", "POST");
+    } catch (err) {
+      console.warn(
+        `[API] Failed to ask bot to reload disabled commands: ${err.message}`
+      );
+    }
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -945,7 +990,7 @@ app.post("/api/commands/register-all", isAuthenticated, (req, res) => {
 app.post("/api/twitch/reload", isAuthenticated, async (req, res) => {
   try {
     const r = await fetch(
-      `http://127.0.0.1:${CONTROL_PORT}/control/reload-twitch`,
+      `http://127.0.0.1:${BOT_CONTROL_PORT}/control/reload-twitch`,
       {
         method: "POST",
         headers: CONTROL_TOKEN
@@ -965,7 +1010,7 @@ app.post("/api/twitch/reload", isAuthenticated, async (req, res) => {
 app.post("/api/twitch/check", isAuthenticated, async (req, res) => {
   try {
     const r = await fetch(
-      `http://127.0.0.1:${CONTROL_PORT}/control/check-twitch`,
+      `http://127.0.0.1:${BOT_CONTROL_PORT}/control/check-twitch`,
       {
         method: "POST",
         headers: CONTROL_TOKEN

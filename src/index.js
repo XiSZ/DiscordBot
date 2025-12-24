@@ -47,10 +47,21 @@ const client = new Client({
 // Command prefix (can be customized via .env file)
 const PREFIX = process.env.COMMAND_PREFIX || "!";
 
-// Auto-execution interval (30 days)
-const AUTO_EXECUTE_INTERVAL_DAYS = 30;
-const AUTO_EXECUTE_INTERVAL_MS =
-  AUTO_EXECUTE_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
+// Auto-execution interval (overridden by env/dashboard, clamped 1-60 days)
+const DEFAULT_AUTO_EXECUTION_DAYS = 30;
+
+function clampIntervalDays(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return DEFAULT_AUTO_EXECUTION_DAYS;
+  return Math.min(Math.max(Math.floor(num), 1), 60);
+}
+
+let AUTO_EXECUTE_INTERVAL_DAYS = clampIntervalDays(
+  process.env.AUTO_EXECUTE_INTERVAL_DAYS ||
+    process.env.AUTO_EXECUTION_INTERVAL_DAYS ||
+    DEFAULT_AUTO_EXECUTION_DAYS
+);
+let AUTO_EXECUTE_INTERVAL_MS = AUTO_EXECUTE_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
 
 // Maximum safe value for Node.js setTimeout (about 24.8 days)
 const MAX_TIMEOUT = 2147483647;
@@ -195,6 +206,39 @@ function startControlApi() {
     try {
       loadTrackingData(true);
       res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/control/reload-translation", checkAuth, (req, res) => {
+    try {
+      loadTranslationData(true);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/control/reload-badge", checkAuth, (req, res) => {
+    try {
+      const changed = loadBadgeSettings(true, "control-api");
+      res.json({
+        success: true,
+        changed,
+        autoExecutionEnabled,
+        intervalDays: AUTO_EXECUTE_INTERVAL_DAYS,
+        lastExecutionTime,
+      });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/control/reload-disabled", checkAuth, (req, res) => {
+    try {
+      loadDisabledCommands();
+      res.json({ success: true, disabledCount: disabledCommands.size });
     } catch (e) {
       res.status(500).json({ error: e.message });
     }
@@ -392,22 +436,59 @@ function loadTwitchData(suppressLog = false) {
 }
 
 // Load badge settings from disk (persisted dashboard state)
-function loadBadgeSettings() {
+function applyIntervalDays(nextDays) {
+  const clamped = clampIntervalDays(nextDays);
+  if (clamped === AUTO_EXECUTE_INTERVAL_DAYS) return false;
+  AUTO_EXECUTE_INTERVAL_DAYS = clamped;
+  AUTO_EXECUTE_INTERVAL_MS = AUTO_EXECUTE_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
+  return true;
+}
+
+function loadBadgeSettings(applyRuntime = false, source = "disk") {
   try {
     if (!fileOps.exists(DATA_DIR)) {
       mkdirSync(DATA_DIR, { recursive: true });
     }
     const data = fileOps.readJSON(BADGE_SETTINGS_PATH);
-    if (data) {
-      if (typeof data.autoExecutionEnabled === "boolean") {
+    if (!data) return false;
+
+    let changed = false;
+
+    if (typeof data.autoExecutionEnabled === "boolean") {
+      if (data.autoExecutionEnabled !== autoExecutionEnabled) {
         autoExecutionEnabled = data.autoExecutionEnabled;
-      }
-      if (typeof data.lastExecutionTime === "number") {
-        lastExecutionTime = data.lastExecutionTime;
+        changed = true;
       }
     }
+    if (
+      typeof data.lastExecutionTime === "number" &&
+      data.lastExecutionTime !== lastExecutionTime
+    ) {
+      lastExecutionTime = data.lastExecutionTime;
+      changed = true;
+    }
+
+    if (typeof data.intervalDays === "number") {
+      changed = applyIntervalDays(data.intervalDays) || changed;
+    }
+
+    if (applyRuntime && changed) {
+      if (autoExecutionEnabled) {
+        setupAutoExecution();
+      } else {
+        clearAutoExecutionTimers();
+      }
+      logger.info(
+        `[Badge] Reloaded settings from ${source}; auto-execution is ${
+          autoExecutionEnabled ? "enabled" : "disabled"
+        } (interval ${AUTO_EXECUTE_INTERVAL_DAYS} day(s))`
+      );
+    }
+
+    return changed;
   } catch (e) {
     logger.warn(`Could not load badge settings: ${e.message}`);
+    return false;
   }
 }
 
@@ -1533,15 +1614,6 @@ client.once("clientReady", () => {
 
     // Start Twitch polling every 5 minutes (balances notifications with API rate limits)
     setInterval(checkTwitchStreamers, 300000);
-
-    // Periodically reload Twitch configuration written by dashboard
-    setInterval(() => {
-      try {
-        loadTwitchData(true);
-      } catch (error) {
-        logger.error(`Failed to reload Twitch config: ${error.message}`);
-      }
-    }, 30000);
   } else {
     console.log(
       "⚠️ Twitch notifications disabled (missing TWITCH_CLIENT_ID or TWITCH_ACCESS_TOKEN in .env)"
