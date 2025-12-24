@@ -599,34 +599,36 @@ function channelDisplayName(channelId) {
 
 // Language display with flag + name + code
 const LANG_MAP = {
-  en: { name: "English", flag: "🇬🇧" },
-  fr: { name: "French", flag: "🇫🇷" },
-  de: { name: "German", flag: "🇩🇪" },
-  es: { name: "Spanish", flag: "🇪🇸" },
-  it: { name: "Italian", flag: "🇮🇹" },
-  ja: { name: "Japanese", flag: "🇯🇵" },
-  ko: { name: "Korean", flag: "🇰🇷" },
-  zh: { name: "Chinese", flag: "🇨🇳" },
-  "zh-cn": { name: "Chinese (Simplified)", flag: "🇨🇳" },
-  "zh-tw": { name: "Chinese (Traditional)", flag: "🇹🇼" },
-  ar: { name: "Arabic", flag: "🇸🇦" },
-  hr: { name: "Croatian", flag: "🇭🇷" },
-  no: { name: "Norwegian", flag: "🇳🇴" },
-  fa: { name: "Persian", flag: "🇮🇷" },
-  ur: { name: "Urdu", flag: "🇵🇰" },
-  ru: { name: "Russian", flag: "🇷🇺" },
-  pt: { name: "Portuguese", flag: "🇵🇹" },
-  nl: { name: "Dutch", flag: "🇳🇱" },
-  sv: { name: "Swedish", flag: "🇸🇪" },
-  pl: { name: "Polish", flag: "🇵🇱" },
+  en: { name: "English", flagCode: "gb" },
+  fr: { name: "French", flagCode: "fr" },
+  de: { name: "German", flagCode: "de" },
+  es: { name: "Spanish", flagCode: "es" },
+  it: { name: "Italian", flagCode: "it" },
+  ja: { name: "Japanese", flagCode: "jp" },
+  ko: { name: "Korean", flagCode: "kr" },
+  zh: { name: "Chinese", flagCode: "cn" },
+  "zh-cn": { name: "Chinese (Simplified)", flagCode: "cn" },
+  "zh-tw": { name: "Chinese (Traditional)", flagCode: "tw" },
+  ar: { name: "Arabic", flagCode: "sa" },
+  hr: { name: "Croatian", flagCode: "hr" },
+  no: { name: "Norwegian", flagCode: "no" },
+  fa: { name: "Persian", flagCode: "ir" },
+  ur: { name: "Urdu", flagCode: "pk" },
+  ru: { name: "Russian", flagCode: "ru" },
+  pt: { name: "Portuguese", flagCode: "pt" },
+  nl: { name: "Dutch", flagCode: "nl" },
+  sv: { name: "Swedish", flagCode: "se" },
+  pl: { name: "Polish", flagCode: "pl" },
 };
 
 function languageDisplay(code, includeCode = false) {
-  if (!code) return '<span class="flag-emoji">🌐</span> Unknown';
+  if (!code) return '<i class="bi bi-globe2"></i> Unknown';
   const norm = String(code).toLowerCase();
   const info = LANG_MAP[norm] || LANG_MAP[norm.split("-")[0]];
-  if (!info) return `<span class="flag-emoji">🌐</span> ${code}`;
-  const display = includeCode ? `<span class="flag-emoji">${info.flag}</span> ${info.name} (${code})` : `<span class="flag-emoji">${info.flag}</span> ${info.name}`;
+  if (!info) return `<i class="bi bi-globe2"></i> ${code}`;
+  const display = includeCode 
+    ? `<span class="fi fi-${info.flagCode}" style="margin-right: 4px;"></span>${info.name} (${code})` 
+    : `<span class="fi fi-${info.flagCode}" style="margin-right: 4px;"></span>${info.name}`;
   return display;
 }
 
