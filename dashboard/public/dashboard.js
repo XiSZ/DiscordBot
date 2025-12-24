@@ -218,10 +218,13 @@ async function loadGuildConfig() {
       <div class="row">
         <div class="col-md-6">
           <div class="stat-card">
-            <h5><i class="bi bi-gear"></i> Configuration</h5>
+            <h5><i class="bi bi-gear"></i> Display Settings</h5>
             <hr>
+            
             <div class="mb-3">
-              <label class="form-label">Display Mode</label>
+              <label class="form-label fw-bold">
+                <i class="bi bi-layout-text-window"></i> Display Mode
+              </label>
               <select class="form-select" id="displayMode">
                 <option value="reply" ${
                   currentConfig.displayMode === "reply" ? "selected" : ""
@@ -233,59 +236,100 @@ async function loadGuildConfig() {
                   currentConfig.displayMode === "thread" ? "selected" : ""
                 }>Thread</option>
               </select>
+              <small class="text-muted d-block mt-1">
+                <i class="bi bi-info-circle"></i> How translations are displayed
+              </small>
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Target Languages</label>
+              <label class="form-label fw-bold">
+                <i class="bi bi-hash"></i> Output Channel
+              </label>
+              <select class="form-select" id="outputChannel">
+                <option value="">Same as source channel</option>
+              </select>
+              <small class="text-muted d-block mt-1">
+                <i class="bi bi-info-circle"></i> Optional: Redirect all translations to a specific channel
+              </small>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <h5><i class="bi bi-globe"></i> Target Languages</h5>
+            <hr>
+            
+            <div class="mb-3">
+              <label class="form-label fw-bold">Selected Languages</label>
               <div id="languagesList" class="mb-2"></div>
+            </div>
+
+            <div class="mb-0">
+              <label class="form-label fw-bold">Add Language</label>
               <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-plus-circle"></i></span>
                 <input type="text" class="form-control" id="newLanguage" 
                   placeholder="e.g., es, fr, de" maxlength="5">
                 <button class="btn btn-primary" onclick="addLanguage()">
                   <i class="bi bi-plus"></i> Add
                 </button>
               </div>
-              <small class="text-muted">Common: en, es, de, fr, it, ja, ko, zh-CN</small>
+              <small class="text-muted d-block mt-1">
+                <i class="bi bi-info-circle"></i> Common: en, es, de, fr, it, ja, ko, zh-CN
+              </small>
             </div>
-
-            <div class="mb-3">
-              <label class="form-label">Output Channel</label>
-              <select class="form-select" id="outputChannel">
-                <option value="">Same as source channel</option>
-              </select>
-              <small class="text-muted">Optional. Select a channel to redirect all translations.</small>
-            </div>
-
-            <button class="btn btn-success w-100" onclick="saveConfig()">
-              <i class="bi bi-check-circle"></i> Save Configuration
-            </button>
           </div>
         </div>
 
         <div class="col-md-6">
           <div class="stat-card">
-            <h5><i class="bi bi-hash"></i> Translation Channels</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0"><i class="bi bi-hash"></i> Translation Channels</h5>
+              <span class="badge bg-primary" id="channelsCount">0</span>
+            </div>
             <hr>
-            <p class="text-muted">
-              <i class="bi bi-info-circle"></i>
-              Enabled channels: <strong id="channelsCount"></strong>
-            </p>
+            
+            <div class="mb-3">
+              <label class="form-label fw-bold">Enabled Channels</label>
+              <div id="selectedChannels"></div>
+            </div>
 
-            <div id="selectedChannels" class="mb-3"></div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">
+                <i class="bi bi-list-check"></i> Available Channels
+              </label>
+              <div id="channelPicker" style="max-height: 250px; overflow-y: auto;"></div>
+            </div>
 
-            <h6 class="mb-2"><i class="bi bi-list-check"></i> Available Channels</h6>
-            <div id="channelPicker" class="mb-3"></div>
+            <div class="mb-0">
+              <label class="form-label fw-bold">Add Channel Manually</label>
+              <div class="input-group">
+                <span class="input-group-text">#</span>
+                <input type="text" class="form-control" id="newChannelId" 
+                  placeholder="Paste channel ID">
+                <button class="btn btn-primary" onclick="addChannel()">
+                  <i class="bi bi-plus"></i> Add
+                </button>
+              </div>
+              <small class="text-muted d-block mt-1">
+                <i class="bi bi-info-circle"></i> Enable Developer Mode in Discord → Right-click channel → Copy Channel ID
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            <div class="input-group mt-3">
-              <span class="input-group-text">#</span>
-              <input type="text" class="form-control" id="newChannelId" placeholder="Add channel ID">
-              <button class="btn btn-primary" onclick="addChannel()">
-                <i class="bi bi-plus"></i> Add
+      <div class="row mt-3">
+        <div class="col-12">
+          <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h5 class="mb-1"><i class="bi bi-floppy"></i> Save Changes</h5>
+                <small class="text-muted">Make sure to save your configuration before leaving</small>
+              </div>
+              <button class="btn btn-success btn-lg" onclick="saveConfig()">
+                <i class="bi bi-check-circle"></i> Save Configuration
               </button>
             </div>
-            <small class="text-muted mt-2 d-block">
-              Tip: Right-click a channel in Discord → Copy Channel ID (Developer Mode required)
-            </small>
           </div>
         </div>
       </div>
@@ -422,7 +466,7 @@ function renderLanguageBadges() {
     currentConfig.targetLanguages.length === 0
   ) {
     container.innerHTML =
-      '<p class="text-muted mb-0">No languages selected</p>';
+      '<div class="text-muted p-2 border rounded bg-light"><i class="bi bi-info-circle"></i> No languages selected</div>';
     return;
   }
 
@@ -430,8 +474,8 @@ function renderLanguageBadges() {
     .map(
       (lang) => `
         <span class="language-badge">
-          ${lang.toUpperCase()}
-          <i class="bi bi-x remove" onclick="removeLanguage('${lang}')"></i>
+          <i class="bi bi-translate"></i> ${lang.toUpperCase()}
+          <i class="bi bi-x-circle remove" onclick="removeLanguage('${lang}')"></i>
         </span>
       `
     )
@@ -444,7 +488,7 @@ function renderChannelPicker() {
 
   if (channelFetchError) {
     container.innerHTML = `
-      <div class="alert alert-warning">
+      <div class="alert alert-warning mb-0">
         <i class="bi bi-exclamation-triangle"></i> ${channelFetchError}
       </div>
     `;
@@ -453,22 +497,22 @@ function renderChannelPicker() {
 
   if (!availableChannels || availableChannels.length === 0) {
     container.innerHTML =
-      '<p class="text-muted">No channel list available. Use manual add below.</p>';
+      '<div class="text-muted p-2 border rounded bg-light"><i class="bi bi-info-circle"></i> No channel list available. Use manual add below.</div>';
     return;
   }
 
   container.innerHTML = availableChannels
     .map(
       (channel) => `
-        <div class="form-check mb-2">
+        <div class="form-check mb-2 p-2 rounded" style="transition: background 0.2s;" 
+             onmouseover="this.style.background='#f8f9fa'" 
+             onmouseout="this.style.background='transparent'">
           <input class="form-check-input channel-checkbox" type="checkbox"
             id="channel-${channel.id}" value="${channel.id}"
             ${currentConfig.channels.includes(channel.id) ? "checked" : ""}
             onchange="toggleChannelSelection('${channel.id}', this.checked)">
           <label class="form-check-label" for="channel-${channel.id}">
-            <i class="bi bi-hash"></i> ${
-              channel.name
-            } <span class="text-muted small">(${channel.id})</span>
+            <i class="bi bi-hash"></i> ${channel.name}
           </label>
         </div>
       `
@@ -514,7 +558,8 @@ function renderSelectedChannels() {
   count.textContent = items.length;
 
   if (items.length === 0) {
-    list.innerHTML = '<p class="text-muted">No channels enabled</p>';
+    list.innerHTML =
+      '<div class="text-muted p-2 border rounded bg-light"><i class="bi bi-info-circle"></i> No channels enabled</div>';
     syncChannelCheckboxes();
     return;
   }
@@ -524,10 +569,11 @@ function renderSelectedChannels() {
       (channelId) => `
         <div class="channel-toggle" data-channel-id="${channelId}">
           <div>
-            <i class="bi bi-hash"></i> ${channelDisplayName(channelId)}
+            <i class="bi bi-check-circle text-success me-1"></i>
+            <strong>${channelDisplayName(channelId)}</strong>
           </div>
           <button class="btn btn-sm btn-outline-danger" onclick="removeChannel('${channelId}')">
-            <i class="bi bi-x"></i> Remove
+            <i class="bi bi-trash"></i>
           </button>
         </div>
       `

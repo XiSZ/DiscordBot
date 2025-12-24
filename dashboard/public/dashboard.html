@@ -55,26 +55,59 @@
         color: #667eea;
       }
       .channel-toggle {
-        padding: 10px;
+        padding: 12px 15px;
         border: 1px solid #dee2e6;
         border-radius: 8px;
         margin-bottom: 10px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        background: #f8f9fa;
+        transition: all 0.2s;
+      }
+      .channel-toggle:hover {
+        border-color: #667eea;
+        background: #f0f4ff;
       }
       .language-badge {
         display: inline-block;
-        padding: 5px 10px;
+        padding: 6px 12px;
         background: #667eea;
         color: white;
-        border-radius: 15px;
-        margin: 5px;
-        font-size: 0.9rem;
+        border-radius: 20px;
+        margin: 4px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+      .language-badge:hover {
+        background: #5568d3;
+        transform: translateY(-1px);
       }
       .language-badge .remove {
         cursor: pointer;
         margin-left: 8px;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+      }
+      .language-badge .remove:hover {
+        opacity: 1;
+      }
+      .form-label.fw-bold {
+        color: #2c3e50;
+        font-size: 0.9rem;
+      }
+      .stat-card h5 {
+        color: #2c3e50;
+        font-weight: 600;
+      }
+      .form-check-label {
+        cursor: pointer;
+        padding: 2px 0;
+      }
+      .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
       }
       .nav-link {
         color: rgba(255, 255, 255, 0.7);
