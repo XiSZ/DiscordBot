@@ -628,7 +628,10 @@ function renderLanguageBadges() {
   const container = document.getElementById("languagesList");
   if (!container || !currentConfig) return;
 
-  if (!currentConfig.targetLanguages || currentConfig.targetLanguages.length === 0) {
+  if (
+    !currentConfig.targetLanguages ||
+    currentConfig.targetLanguages.length === 0
+  ) {
     container.innerHTML =
       '<div class="text-muted p-2 border rounded bg-light"><i class="bi bi-info-circle"></i> No languages selected</div>';
     return;
