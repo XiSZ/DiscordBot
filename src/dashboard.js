@@ -206,11 +206,11 @@ app.post("/api/badge/settings", isAuthenticated, (req, res) => {
 });
 
 // API: Get user's guilds where they have manage server permission
-app.get("/api/commands", isAuthenticated, async (req, res) => {
+app.get("/api/guilds", isAuthenticated, async (req, res) => {
   try {
     const guilds = req.user.guilds || [];
     // Filter guilds where user has MANAGE_GUILD permission (0x20)
-    const { guildId } = req.query;
+    const manageableGuilds = guilds.filter(
       (guild) => (guild.permissions & 0x20) === 0x20
     );
     res.json(manageableGuilds);
@@ -218,16 +218,6 @@ app.get("/api/commands", isAuthenticated, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-    if (guildId) {
-      // Verify user can manage the requested guild
-      const userGuilds = req.user.guilds || [];
-      const hasPermission = userGuilds.some(
-        (g) => g.id === guildId && (g.permissions & 0x20) === 0x20
-      );
-      if (!hasPermission) {
-        return res.status(403).json({ error: "No permission to manage this server" });
-      }
 app.get("/api/guild/:guildId/config", isAuthenticated, async (req, res) => {
   try {
     const { guildId } = req.params;
@@ -408,6 +398,16 @@ app.get("/api/commands", isAuthenticated, async (req, res) => {
       },
     ];
     if (guildId) {
+      // Verify user can manage the requested guild
+      const userGuilds = req.user.guilds || [];
+      const hasPermission = userGuilds.some(
+        (g) => g.id === guildId && (g.permissions & 0x20) === 0x20
+      );
+      if (!hasPermission) {
+        return res
+          .status(403)
+          .json({ error: "No permission to manage this server" });
+      }
       urls.push({
         scope: "guild",
         url: `${DISCORD_API_BASE}/applications/${clientId}/guilds/${guildId}/commands`,
