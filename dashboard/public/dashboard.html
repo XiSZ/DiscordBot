@@ -133,6 +133,22 @@
         color: white;
         border-left: 3px solid #667eea;
       }
+      .command-item {
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: background 0.2s;
+      }
+      .command-item:hover {
+        background: #f8f9fa;
+      }
+      .command-name {
+        background: #e7f1ff;
+        color: #0066cc;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
     </style>
   </head>
   <body>
@@ -669,148 +685,214 @@
         </div>
 
         <p class="text-muted mb-4">
-          Complete command reference. Commands marked with 💬 work in DMs when
+          Complete command reference. Commands marked with <span class="badge bg-info text-dark"><i class="bi bi-chat-dots"></i> DM</span> work in DMs when
           bot is installed as a User App.
         </p>
 
         <div class="row">
           <div class="col-md-6">
             <div class="stat-card">
-              <h5><i class="bi bi-info-circle"></i> Information Commands 💬</h5>
+              <h5><i class="bi bi-info-circle text-primary"></i> Information Commands</h5>
               <hr />
-              <div class="mb-2">
-                <strong>/ping</strong> 💬
-                <p class="text-muted small mb-0">
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start">
+                  <code class="command-name">/ping</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                </div>
+                <p class="text-muted small mb-0 mt-1">
                   Check bot latency and response time
                 </p>
               </div>
-              <div class="mb-2">
-                <strong>/uptime</strong> 💬
-                <p class="text-muted small mb-0">
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start">
+                  <code class="command-name">/uptime</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                </div>
+                <p class="text-muted small mb-0 mt-1">
                   See how long the bot has been running
                 </p>
               </div>
-              <div class="mb-2">
-                <strong>/status</strong> 💬
-                <p class="text-muted small mb-0">
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start">
+                  <code class="command-name">/status</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                </div>
+                <p class="text-muted small mb-0 mt-1">
                   View next auto-execution date for badge
                 </p>
               </div>
-              <div class="mb-2">
-                <strong>/stats</strong> 💬
-                <p class="text-muted small mb-0">
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start">
+                  <code class="command-name">/stats</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                </div>
+                <p class="text-muted small mb-0 mt-1">
                   Bot performance and usage statistics
                 </p>
               </div>
-              <div class="mb-2">
-                <strong>/botinfo</strong> 💬
-                <p class="text-muted small mb-0">Detailed bot information</p>
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start">
+                  <code class="command-name">/botinfo</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                </div>
+                <p class="text-muted small mb-0 mt-1">Detailed bot information</p>
               </div>
-              <div class="mb-2">
-                <strong>/serverinfo</strong>
-                <p class="text-muted small mb-0">
+              <div class="command-item mb-3">
+                <code class="command-name">/serverinfo</code>
+                <p class="text-muted small mb-0 mt-1">
                   Server details and statistics
                 </p>
               </div>
-              <div class="mb-0">
-                <strong>/userinfo</strong> 💬 <code>[user]</code>
-                <p class="text-muted small mb-0">Information about a user</p>
+              <div class="command-item mb-0">
+                <div class="d-flex align-items-start flex-wrap">
+                  <code class="command-name">/userinfo</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <code class="text-secondary ms-2">[user]</code>
+                </div>
+                <p class="text-muted small mb-0 mt-1">Information about a user</p>
               </div>
             </div>
           </div>
 
           <div class="col-md-6">
             <div class="stat-card">
-              <h5><i class="bi bi-tools"></i> Utility Commands</h5>
+              <h5><i class="bi bi-tools text-success"></i> Utility Commands</h5>
               <hr />
-              <div class="mb-2">
-                <strong>/say</strong> <code>&lt;message&gt; [channel]</code>
-                <p class="text-muted small mb-0">Send a message as the bot</p>
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start flex-wrap">
+                  <code class="command-name">/say</code>
+                  <code class="text-danger ms-2">&lt;message&gt;</code>
+                  <code class="text-secondary ms-1">[channel]</code>
+                </div>
+                <p class="text-muted small mb-0 mt-1">Send a message as the bot</p>
               </div>
-              <div class="mb-2">
-                <strong>/poll</strong>
-                <code>&lt;question&gt; &lt;options...&gt;</code>
-                <p class="text-muted small mb-0">
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start flex-wrap">
+                  <code class="command-name">/poll</code>
+                  <code class="text-danger ms-2">&lt;question&gt;</code>
+                  <code class="text-danger ms-1">&lt;options...&gt;</code>
+                </div>
+                <p class="text-muted small mb-0 mt-1">
                   Create a poll with reactions (2-5 options)
                 </p>
               </div>
-              <div class="mb-2">
-                <strong>/remind</strong> 💬
-                <code>&lt;minutes&gt; &lt;reminder&gt;</code>
-                <p class="text-muted small mb-0">
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start flex-wrap">
+                  <code class="command-name">/remind</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <code class="text-danger ms-2">&lt;minutes&gt;</code>
+                  <code class="text-danger ms-1">&lt;reminder&gt;</code>
+                </div>
+                <p class="text-muted small mb-0 mt-1">
                   Set a DM reminder (1-10080 minutes)
                 </p>
               </div>
-              <div class="mb-2">
-                <strong>/invite</strong> 💬
-                <p class="text-muted small mb-0">Get bot invite link</p>
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start">
+                  <code class="command-name">/invite</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                </div>
+                <p class="text-muted small mb-0 mt-1">Get bot invite link</p>
               </div>
-              <div class="mb-2">
-                <strong>/avatar</strong> 💬 <code>[user]</code>
-                <p class="text-muted small mb-0">
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start flex-wrap">
+                  <code class="command-name">/avatar</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <code class="text-secondary ms-2">[user]</code>
+                </div>
+                <p class="text-muted small mb-0 mt-1">
                   View user's avatar in full size
                 </p>
               </div>
-              <div class="mb-0">
-                <strong>/echo</strong> 💬 <code>&lt;message&gt;</code>
-                <p class="text-muted small mb-0">Echo a message back</p>
+              <div class="command-item mb-0">
+                <div class="d-flex align-items-start flex-wrap">
+                  <code class="command-name">/echo</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <code class="text-danger ms-2">&lt;message&gt;</code>
+                </div>
+                <p class="text-muted small mb-0 mt-1">Echo a message back</p>
               </div>
             </div>
           </div>
 
           <div class="col-md-6">
             <div class="stat-card">
-              <h5><i class="bi bi-emoji-smile"></i> Fun Commands 💬</h5>
+              <h5><i class="bi bi-emoji-smile text-warning"></i> Fun Commands</h5>
               <hr />
-              <div class="mb-2">
-                <strong>/8ball</strong> 💬 <code>&lt;question&gt;</code>
-                <p class="text-muted small mb-0">Ask the magic 8-ball</p>
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start flex-wrap">
+                  <code class="command-name">/8ball</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <code class="text-danger ms-2">&lt;question&gt;</code>
+                </div>
+                <p class="text-muted small mb-0 mt-1">Ask the magic 8-ball</p>
               </div>
-              <div class="mb-2">
-                <strong>/dice</strong> 💬 <code>[sides]</code>
-                <p class="text-muted small mb-0">
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start flex-wrap">
+                  <code class="command-name">/dice</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <code class="text-secondary ms-2">[sides]</code>
+                </div>
+                <p class="text-muted small mb-0 mt-1">
                   Roll a dice (default: 6 sides)
                 </p>
               </div>
-              <div class="mb-2">
-                <strong>/flip</strong> 💬
-                <p class="text-muted small mb-0">Flip a coin</p>
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start">
+                  <code class="command-name">/flip</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                </div>
+                <p class="text-muted small mb-0 mt-1">Flip a coin</p>
               </div>
-              <div class="mb-2">
-                <strong>/joke</strong> 💬
-                <p class="text-muted small mb-0">Get a random joke</p>
+              <div class="command-item mb-3">
+                <div class="d-flex align-items-start">
+                  <code class="command-name">/joke</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                </div>
+                <p class="text-muted small mb-0 mt-1">Get a random joke</p>
               </div>
-              <div class="mb-0">
-                <strong>/quote</strong> 💬
-                <p class="text-muted small mb-0">Get an inspirational quote</p>
+              <div class="command-item mb-0">
+                <div class="d-flex align-items-start">
+                  <code class="command-name">/quote</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                </div>
+                <p class="text-muted small mb-0 mt-1">Get an inspirational quote</p>
               </div>
             </div>
           </div>
 
           <div class="col-md-6">
             <div class="stat-card">
-              <h5><i class="bi bi-translate"></i> Translation Commands</h5>
+              <h5><i class="bi bi-translate text-info"></i> Translation Commands</h5>
               <hr />
-              <div class="mb-0">
-                <strong>/translate</strong> 💬
-                <code>&lt;text&gt; [to] [from]</code>
-                <p class="text-muted small mb-0">
+              <div class="command-item mb-2">
+                <div class="d-flex align-items-start flex-wrap">
+                  <code class="command-name">/translate</code>
+                  <span class="badge bg-info text-dark ms-2"><i class="bi bi-chat-dots"></i> DM</span>
+                  <code class="text-danger ms-2">&lt;text&gt;</code>
+                  <code class="text-secondary ms-1">[to]</code>
+                  <code class="text-secondary ms-1">[from]</code>
+                </div>
+                <p class="text-muted small mb-0 mt-1">
                   Translate text to another language
                 </p>
               </div>
-              <small class="text-muted d-block mt-2">
-                <strong>Common codes:</strong> en (English), es (Spanish), de
-                (German), fr (French), ja (Japanese), zh-CN (Chinese)
-              </small>
+              <div class="alert alert-light border mt-3 mb-0">
+                <small class="text-muted">
+                  <strong><i class="bi bi-info-circle"></i> Common codes:</strong><br>
+                  <code>en</code> English &nbsp;·&nbsp; <code>es</code> Spanish &nbsp;·&nbsp; <code>de</code> German<br>
+                  <code>fr</code> French &nbsp;·&nbsp; <code>ja</code> Japanese &nbsp;·&nbsp; <code>zh-CN</code> Chinese
+                </small>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="stat-card mt-3">
+        <div class="stat-card mt-3 border-primary">
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <h5 class="mb-1">
-                <i class="bi bi-book"></i> Full Documentation
+                <i class="bi bi-book text-primary"></i> Full Documentation
               </h5>
               <p class="text-muted mb-0">Detailed command usage and examples</p>
             </div>
