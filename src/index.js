@@ -3556,24 +3556,6 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 
-  // Invite command
-  if (interaction.commandName === "invite") {
-    const clientId = process.env.CLIENT_ID;
-    const permissions = "8"; // Administrator permission
-    const params = new URLSearchParams({
-      client_id: clientId,
-      permissions,
-      scope: "bot applications.commands",
-    });
-    const inviteUrl = `https://discord.com/api/oauth2/authorize?${params.toString()}`;
-
-    await interaction.reply({
-      content: "🤝 Invite the bot to your server:\n" + inviteUrl,
-      ephemeral: true,
-    });
-    return;
-  }
-
   // 8ball command
   if (interaction.commandName === "8ball") {
     const responses = [
