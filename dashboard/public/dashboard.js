@@ -295,13 +295,22 @@ async function loadGuildConfig() {
 
             <div class="mb-3">
               <label class="form-label fw-bold">
-                <i class="bi bi-list-check"></i> Available Channels
+                <i class="bi bi-list-check"></i> Add from Available Channels
               </label>
-              <div id="channelPicker" style="max-height: 250px; overflow-y: auto;"></div>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-hash"></i></span>
+                <select class="form-select" id="channelPicker">
+                  <option value="">Select a channel to add...</option>
+                </select>
+                <button class="btn btn-primary" onclick="addChannelFromDropdown()">
+                  <i class="bi bi-plus"></i> Add
+                </button>
+              </div>
+              <div id="channelPickerMessage"></div>
             </div>
 
             <div class="mb-0">
-              <label class="form-label fw-bold">Add Channel Manually</label>
+              <label class="form-label fw-bold">Add Channel by ID</label>
               <div class="input-group">
                 <span class="input-group-text">#</span>
                 <input type="text" class="form-control" id="newChannelId" 
@@ -483,41 +492,53 @@ function renderLanguageBadges() {
 }
 
 function renderChannelPicker() {
-  const container = document.getElementById("channelPicker");
-  if (!container) return;
+  const dropdown = document.getElementById("channelPicker");
+  const messageContainer = document.getElementById("channelPickerMessage");
+  if (!dropdown) return;
+
+  // Clear and set default option
+  dropdown.innerHTML = '<option value="">Select a channel to add...</option>';
 
   if (channelFetchError) {
-    container.innerHTML = `
-      <div class="alert alert-warning mb-0">
-        <i class="bi bi-exclamation-triangle"></i> ${channelFetchError}
-      </div>
-    `;
+    if (messageContainer) {
+      messageContainer.innerHTML = `
+        <div class="alert alert-warning mt-2 mb-0">
+          <i class="bi bi-exclamation-triangle"></i> ${channelFetchError}
+        </div>
+      `;
+    }
     return;
   }
 
   if (!availableChannels || availableChannels.length === 0) {
-    container.innerHTML =
-      '<div class="text-muted p-2 border rounded bg-light"><i class="bi bi-info-circle"></i> No channel list available. Use manual add below.</div>';
+    if (messageContainer) {
+      messageContainer.innerHTML =
+        '<small class="text-muted d-block mt-1"><i class="bi bi-info-circle"></i> No channel list available. Use manual add below.</small>';
+    }
     return;
   }
 
-  container.innerHTML = availableChannels
-    .map(
-      (channel) => `
-        <div class="form-check mb-2 p-2 rounded" style="transition: background 0.2s;" 
-             onmouseover="this.style.background='#f8f9fa'" 
-             onmouseout="this.style.background='transparent'">
-          <input class="form-check-input channel-checkbox" type="checkbox"
-            id="channel-${channel.id}" value="${channel.id}"
-            ${currentConfig.channels.includes(channel.id) ? "checked" : ""}
-            onchange="toggleChannelSelection('${channel.id}', this.checked)">
-          <label class="form-check-label" for="channel-${channel.id}">
-            <i class="bi bi-hash"></i> ${channel.name}
-          </label>
-        </div>
-      `
-    )
-    .join("");
+  if (messageContainer) {
+    messageContainer.innerHTML = "";
+  }
+
+  // Filter out already-enabled channels and populate dropdown
+  availableChannels
+    .filter((channel) => !currentConfig.channels.includes(channel.id))
+    .forEach((channel) => {
+      const option = document.createElement("option");
+      option.value = channel.id;
+      option.textContent = `#${channel.name}`;
+      dropdown.appendChild(option);
+    });
+
+  // Show message if all channels are already added
+  if (dropdown.options.length === 1) {
+    if (messageContainer) {
+      messageContainer.innerHTML =
+        '<small class="text-success d-block mt-1"><i class="bi bi-check-circle"></i> All available channels are already enabled!</small>';
+    }
+  }
 }
 
 function renderOutputChannelDropdown() {
@@ -543,12 +564,6 @@ function renderOutputChannelDropdown() {
   });
 }
 
-function syncChannelCheckboxes() {
-  document.querySelectorAll(".channel-checkbox").forEach((input) => {
-    input.checked = currentConfig.channels.includes(input.value);
-  });
-}
-
 function renderSelectedChannels() {
   const list = document.getElementById("selectedChannels");
   const count = document.getElementById("channelsCount");
@@ -560,7 +575,6 @@ function renderSelectedChannels() {
   if (items.length === 0) {
     list.innerHTML =
       '<div class="text-muted p-2 border rounded bg-light"><i class="bi bi-info-circle"></i> No channels enabled</div>';
-    syncChannelCheckboxes();
     return;
   }
 
@@ -579,24 +593,6 @@ function renderSelectedChannels() {
       `
     )
     .join("");
-
-  syncChannelCheckboxes();
-}
-
-function toggleChannelSelection(channelId, checked) {
-  if (!currentConfig) return;
-
-  if (checked) {
-    if (!currentConfig.channels.includes(channelId)) {
-      currentConfig.channels.push(channelId);
-    }
-  } else {
-    currentConfig.channels = currentConfig.channels.filter(
-      (c) => c !== channelId
-    );
-  }
-
-  renderSelectedChannels();
 }
 
 // Add language
@@ -652,6 +648,32 @@ async function addChannel() {
   currentConfig.channels.push(channelId);
   input.value = "";
   renderSelectedChannels();
+  renderChannelPicker(); // Refresh dropdown in case it was from there
+}
+
+// Add channel from dropdown
+async function addChannelFromDropdown() {
+  const dropdown = document.getElementById("channelPicker");
+  const channelId = dropdown.value;
+
+  if (!channelId) {
+    alert("Please select a channel from the dropdown");
+    return;
+  }
+
+  if (!currentConfig) {
+    alert("Please select a server first.");
+    return;
+  }
+
+  if (currentConfig.channels.includes(channelId)) {
+    alert("Channel already enabled.");
+    return;
+  }
+
+  currentConfig.channels.push(channelId);
+  renderSelectedChannels();
+  renderChannelPicker(); // Refresh dropdown to remove the added channel
 }
 
 // Remove channel
@@ -667,6 +689,7 @@ async function removeChannel(channelId) {
     (c) => c !== channelId
   );
   renderSelectedChannels();
+  renderChannelPicker(); // Refresh dropdown to show the removed channel
 }
 
 // Remove language
