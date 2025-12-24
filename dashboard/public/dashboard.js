@@ -326,7 +326,16 @@ function updateServerHeaders() {
     sidebarIcon.src = iconUrl;
     sidebarName.textContent = currentGuild.name;
     if (sidebarStatus) {
-      sidebarStatus.style.display = currentGuild.botJoined ? "block" : "none";
+      sidebarStatus.style.display = "block";
+      if (currentGuild.botJoined) {
+        sidebarStatus.style.color = "#43b581";
+        sidebarStatus.innerHTML =
+          '<i class="bi bi-check-circle-fill"></i> Active';
+      } else {
+        sidebarStatus.style.color = "#faa61a";
+        sidebarStatus.innerHTML =
+          '<i class="bi bi-slash-circle"></i> Not Joined';
+      }
     }
   }
 
