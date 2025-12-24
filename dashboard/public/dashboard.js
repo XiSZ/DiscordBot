@@ -628,21 +628,17 @@ function renderLanguageBadges() {
   const container = document.getElementById("languagesList");
   if (!container || !currentConfig) return;
 
-                        ${
-                          pairs.length > 0
-                            ? pairs
-                                .map(([pair, count]) => {
-                                  const [from, to] = String(pair).split("->");
-                                  const display = `${languageDisplay(from)} → ${languageDisplay(to)}`;
-                                  return `
-                            <div class="d-flex justify-content-between mb-2">
-                                <span><strong>${display}</strong></span>
-                                <span class="badge bg-primary">${count} translations</span>
-                            </div>`;
-                                })
-                                .join("")
-                            : '<p class="text-muted">No data yet</p>'
-                        }
+  if (!currentConfig.targetLanguages || currentConfig.targetLanguages.length === 0) {
+    container.innerHTML =
+      '<div class="text-muted p-2 border rounded bg-light"><i class="bi bi-info-circle"></i> No languages selected</div>';
+    return;
+  }
+
+  container.innerHTML = currentConfig.targetLanguages
+    .map(
+      (lang) => `
+        <span class="language-badge">
+          <i class="bi bi-translate"></i> ${lang.toUpperCase()}
           <i class="bi bi-x-circle remove" onclick="removeLanguage('${lang}')"></i>
         </span>
       `
