@@ -1625,33 +1625,37 @@ function renderCommandsList(commands) {
   container.innerHTML = commands
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((c) => {
-      const badge =
+      const scopeBadge =
         c.scope === "guild"
-          ? '<span class="badge bg-secondary ms-2">Guild</span>'
-          : '<span class="badge bg-primary ms-2">Global</span>';
+          ? '<span class="badge bg-secondary">Guild</span>'
+          : '<span class="badge bg-primary">Global</span>';
+      const statusBadge = c.disabled
+        ? '<span class="badge bg-warning text-dark ms-1">Disabled</span>'
+        : '<span class="badge bg-success ms-1">Active</span>';
       const toggleId = `disable_${c.scope}_${c.id}`;
       return `
-        <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2">
-          <div>
-            <strong>/${c.name}</strong> <small class="text-muted">${
-        c.description || ""
-      }</small> ${badge}
-            ${
-              c.disabled
-                ? '<span class="badge bg-warning text-dark ms-2">Runtime disabled</span>'
-                : ""
-            }
+        <div class="d-flex align-items-center justify-content-between border rounded p-3 mb-2 ${c.disabled ? 'bg-light' : ''}">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-1">
+              <strong style="font-size: 1.1rem;">/${c.name}</strong>
+              <span class="ms-2">${scopeBadge}${statusBadge}</span>
+            </div>
+            <small class="text-muted">${c.description || "No description"}</small>
           </div>
-          <div class="d-flex align-items-center">
-            <div class="form-check form-switch me-3">
+          <div class="d-flex align-items-center gap-2">
+            <div class="form-check form-switch mb-0">
               <input class="form-check-input" type="checkbox" id="${toggleId}" ${
         c.disabled ? "" : "checked"
-      } onchange="toggleCommandRuntime('${c.name}', this.checked)">
-              <label class="form-check-label" for="${toggleId}">Runtime</label>
+      } onchange="toggleCommandRuntime('${c.name}', this.checked)" style="cursor: pointer;">
+              <label class="form-check-label" for="${toggleId}" style="cursor: pointer; user-select: none;">
+                ${c.disabled ? "Enable" : "Disable"}
+              </label>
             </div>
             <button class="btn btn-sm btn-outline-danger" onclick="deleteCommand('${
               c.id
-            }', '${c.scope}')"><i class="bi bi-trash"></i></button>
+            }', '${c.scope}')" title="Delete command registration">
+              <i class="bi bi-trash"></i>
+            </button>
           </div>
         </div>
       `;
