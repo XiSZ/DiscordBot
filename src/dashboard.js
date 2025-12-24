@@ -43,13 +43,30 @@ async function callBotControl(path, method = "GET", body = null) {
 }
 
 // Public metadata for login screen
-app.get("/api/meta", (req, res) => {
-  res.json({
-    botName: process.env.BOT_NAME || "aB0T Dashboard",
-    botAvatarUrl:
-      process.env.BOT_AVATAR_URL ||
-      "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f916.png",
-  });
+app.get("/api/meta", async (req, res) => {
+  try {
+    // Try to get bot info from control API
+    let botInfo = null;
+    try {
+      botInfo = await callBotControl("/control/bot-info");
+    } catch (error) {
+      console.error("Failed to fetch bot info from control API:", error);
+    }
+
+    res.json({
+      botName: botInfo?.username || process.env.BOT_NAME || "aB0T Dashboard",
+      botAvatarUrl: botInfo?.avatarUrl || process.env.BOT_AVATAR_URL || 
+        "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f916.png",
+      botId: botInfo?.id || null,
+      botTag: botInfo?.tag || null
+    });
+  } catch (error) {
+    res.json({
+      botName: process.env.BOT_NAME || "aB0T Dashboard",
+      botAvatarUrl: process.env.BOT_AVATAR_URL ||
+        "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f916.png",
+    });
+  }
 });
 
 // Helpers for config paths

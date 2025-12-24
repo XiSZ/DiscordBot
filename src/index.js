@@ -162,6 +162,25 @@ function startControlApi() {
     }
   });
 
+  // Get bot info
+  app.get("/control/bot-info", checkAuth, (req, res) => {
+    try {
+      const avatarUrl = client.user.avatar
+        ? `https://cdn.discordapp.com/avatars/${client.user.id}/${client.user.avatar}.png?size=256`
+        : `https://cdn.discordapp.com/embed/avatars/${parseInt(client.user.discriminator) % 5}.png`;
+      
+      res.json({
+        id: client.user.id,
+        username: client.user.username,
+        discriminator: client.user.discriminator,
+        tag: client.user.tag,
+        avatarUrl: avatarUrl
+      });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // Get guilds bot is in
   app.get("/control/guilds", checkAuth, (req, res) => {
     try {
