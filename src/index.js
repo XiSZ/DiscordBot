@@ -124,6 +124,20 @@ function startControlApi() {
   if (!enabled) return;
   const CONTROL_PORT = Number(process.env.BOT_CONTROL_PORT || 3210);
   const TOKEN = process.env.CONTROL_TOKEN || process.env.SESSION_SECRET || "";
+
+  console.log("[Control API] Starting with configuration:");
+  console.log(`[Control API] CONTROL_PORT: ${CONTROL_PORT}`);
+  console.log(
+    `[Control API] TOKEN: ${
+      TOKEN ? "SET (length: " + TOKEN.length + ")" : "NOT SET"
+    }`
+  );
+  console.log(
+    `[Control API] SESSION_SECRET: ${
+      process.env.SESSION_SECRET ? "SET" : "NOT SET"
+    }`
+  );
+
   const app = express();
   app.use(express.json());
 

@@ -20,6 +20,19 @@ const BOT_CONTROL_PORT = Number(process.env.BOT_CONTROL_PORT || 3210);
 const CONTROL_TOKEN =
   process.env.CONTROL_TOKEN || process.env.SESSION_SECRET || "";
 
+console.log("[Dashboard] Starting with configuration:");
+console.log(`[Dashboard] BOT_CONTROL_PORT: ${BOT_CONTROL_PORT}`);
+console.log(
+  `[Dashboard] CONTROL_TOKEN: ${
+    CONTROL_TOKEN ? "SET (length: " + CONTROL_TOKEN.length + ")" : "NOT SET"
+  }`
+);
+console.log(
+  `[Dashboard] SESSION_SECRET: ${
+    process.env.SESSION_SECRET ? "SET" : "NOT SET"
+  }`
+);
+
 app.use(express.json());
 
 // Helper to call bot control API
