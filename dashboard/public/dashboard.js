@@ -540,12 +540,17 @@ async function loadGuildStats() {
                           pairs.length > 0
                             ? pairs
                                 .map(
-                                  ([pair, count]) => `
+                                  ([pair, count]) => {
+                                    const [from, to] = pair.split("->").map(c => c.trim());
+                                    const fromDisplay = languageDisplay(from);
+                                    const toDisplay = languageDisplay(to);
+                                    return `
                             <div class="d-flex justify-content-between mb-2">
-                                <span><strong>${pair}</strong></span>
+                                <span><strong>${fromDisplay} → ${toDisplay}</strong></span>
                                 <span class="badge bg-primary">${count} translations</span>
                             </div>
-                        `
+                        `;
+                                  }
                                 )
                                 .join("")
                             : '<p class="text-muted">No data yet</p>'
