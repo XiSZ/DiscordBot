@@ -4,6 +4,7 @@ let guilds = [];
 let currentConfig = null;
 let availableChannels = [];
 let channelFetchError = null;
+let userMenuOpen = false;
 
 // Utility: fetch with timeout and JSON parsing
 async function fetchJSON(url, options = {}, timeoutMs = 15000) {
@@ -77,6 +78,33 @@ function handleSidebarServerChange(guildId) {
     selector.style.display = "none";
   }
 }
+
+// Toggle user dropdown
+function toggleUserMenu(event) {
+  event?.stopPropagation();
+  const menu = document.getElementById("userMenu");
+  if (!menu) return;
+  userMenuOpen = !userMenuOpen;
+  menu.style.display = userMenuOpen ? "block" : "none";
+}
+
+// Close user dropdown
+function closeUserMenu() {
+  const menu = document.getElementById("userMenu");
+  if (!menu) return;
+  userMenuOpen = false;
+  menu.style.display = "none";
+}
+
+// Close user dropdown when clicking outside
+document.addEventListener("click", (e) => {
+  if (!userMenuOpen) return;
+  const card = document.getElementById("userProfileCard");
+  const menu = document.getElementById("userMenu");
+  if (card && card.contains(e.target)) return;
+  if (menu && menu.contains(e.target)) return;
+  closeUserMenu();
+});
 
 // Populate sidebar server selector
 function populateSidebarServerSelector() {
