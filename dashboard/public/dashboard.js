@@ -5,6 +5,7 @@ let currentConfig = null;
 let availableChannels = [];
 let channelFetchError = null;
 let userMenuOpen = false;
+let sidebarOpen = false;
 
 // Utility: fetch with timeout and JSON parsing
 async function fetchJSON(url, options = {}, timeoutMs = 15000) {
@@ -77,6 +78,9 @@ function handleSidebarServerChange(guildId) {
   if (selector) {
     selector.style.display = "none";
   }
+  if (window.innerWidth <= 768) {
+    closeSidebar();
+  }
 }
 
 // Toggle user dropdown
@@ -104,6 +108,35 @@ document.addEventListener("click", (e) => {
   if (card && card.contains(e.target)) return;
   if (menu && menu.contains(e.target)) return;
   closeUserMenu();
+});
+
+// Sidebar toggle for mobile
+function toggleSidebar(forceState) {
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+  if (!sidebar || !overlay) return;
+  const nextState = typeof forceState === "boolean" ? forceState : !sidebarOpen;
+  sidebarOpen = nextState;
+
+  if (nextState) {
+    sidebar.classList.add("sidebar-open");
+    overlay.style.display = "block";
+    document.body.classList.add("no-scroll");
+  } else {
+    sidebar.classList.remove("sidebar-open");
+    overlay.style.display = "none";
+    document.body.classList.remove("no-scroll");
+  }
+}
+
+function closeSidebar() {
+  toggleSidebar(false);
+}
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 992 && sidebarOpen) {
+    closeSidebar();
+  }
 });
 
 // Populate sidebar server selector

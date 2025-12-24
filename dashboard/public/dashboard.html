@@ -37,10 +37,22 @@
         width: 250px;
         padding-top: 20px;
         padding-bottom: 16px;
+        transition: transform 0.3s ease;
+        z-index: 1040;
       }
       .main-content {
         margin-left: 250px;
         padding: 20px;
+      }
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 1030;
+      }
+      body.no-scroll {
+        overflow: hidden;
       }
       @media (max-width: 992px) {
         .sidebar {
@@ -52,10 +64,14 @@
       }
       @media (max-width: 768px) {
         .sidebar {
-          position: relative;
-          width: 100%;
-          height: auto;
-          max-height: none;
+          position: fixed;
+          width: 260px;
+          height: 100vh;
+          max-height: 100vh;
+          transform: translateX(-100%);
+        }
+        .sidebar.sidebar-open {
+          transform: translateX(0);
         }
         .main-content {
           margin-left: 0;
@@ -277,7 +293,7 @@
   </head>
   <body>
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div id="sidebar" class="sidebar">
       <!-- User Profile Card -->
       <div class="px-3 mb-3 pt-3 position-relative">
         <div
@@ -466,8 +482,22 @@
       </nav>
     </div>
 
+    <div
+      id="sidebarOverlay"
+      class="sidebar-overlay"
+      onclick="closeSidebar()"
+    ></div>
+
     <!-- Main Content -->
     <div class="main-content">
+      <div
+        class="d-flex justify-content-between align-items-center mb-3 d-lg-none"
+      >
+        <button class="btn btn-outline-primary" onclick="toggleSidebar()">
+          <i class="bi bi-list"></i> Menu
+        </button>
+      </div>
+
       <!-- Servers Page -->
       <div id="serversPage" class="page">
         <div class="d-flex justify-content-between align-items-center mb-4">
