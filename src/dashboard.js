@@ -35,6 +35,9 @@ const DATA_DIR =
 const DISCORD_API_BASE = "https://discord.com/api/v10";
 const BADGE_SETTINGS_PATH = join(DATA_DIR, "badge-settings.json");
 const DISABLED_COMMANDS_PATH = join(DATA_DIR, "disabled-commands.json");
+const CONTROL_PORT = Number(process.env.BOT_CONTROL_PORT || 3210);
+const CONTROL_TOKEN =
+  process.env.CONTROL_TOKEN || process.env.SESSION_SECRET || "";
 
 function ensureDir(path) {
   if (!existsSync(path)) {
@@ -380,6 +383,86 @@ app.post("/api/guild/:guildId/config", isAuthenticated, async (req, res) => {
   }
 });
 
+// API: Get Twitch configuration for a guild
+app.get(
+  "/api/guild/:guildId/twitch-config",
+  isAuthenticated,
+  async (req, res) => {
+    try {
+      const { guildId } = req.params;
+
+      // Verify permission
+      const userGuilds = req.user.guilds || [];
+      const hasPermission = userGuilds.some(
+        (g) => g.id === guildId && (g.permissions & 0x20) === 0x20
+      );
+      if (!hasPermission) {
+        return res
+          .status(403)
+          .json({ error: "No permission to manage this server" });
+      }
+
+      const configPath = join(
+        DATA_DIR,
+        "servers",
+        guildId,
+        "twitch-config.json"
+      );
+      const config = readJSON(configPath, { streamers: [], channelId: null });
+      res.json({
+        streamers: Array.isArray(config.streamers) ? config.streamers : [],
+        channelId: config.channelId || null,
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// API: Update Twitch configuration for a guild
+app.post(
+  "/api/guild/:guildId/twitch-config",
+  isAuthenticated,
+  async (req, res) => {
+    try {
+      const { guildId } = req.params;
+      const { streamers, channelId } = req.body || {};
+
+      // Verify permission
+      const userGuilds = req.user.guilds || [];
+      const hasPermission = userGuilds.some(
+        (g) => g.id === guildId && (g.permissions & 0x20) === 0x20
+      );
+      if (!hasPermission) {
+        return res
+          .status(403)
+          .json({ error: "No permission to manage this server" });
+      }
+
+      const configPath = join(
+        DATA_DIR,
+        "servers",
+        guildId,
+        "twitch-config.json"
+      );
+      const next = {
+        streamers: Array.from(
+          new Set(
+            (Array.isArray(streamers) ? streamers : [])
+              .map((s) => String(s).trim())
+              .filter(Boolean)
+          )
+        ),
+        channelId: channelId || null,
+      };
+      writeJSON(configPath, next);
+      res.json({ success: true, message: "Twitch configuration saved." });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
 // Commands: list registered commands (global and optionally guild)
 app.get("/api/commands", isAuthenticated, async (req, res) => {
   try {
@@ -507,6 +590,46 @@ app.post("/api/commands/register-all", isAuthenticated, (req, res) => {
       }
       res.json({ success: true, output: stdout });
     });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Trigger bot to reload Twitch config immediately
+app.post("/api/twitch/reload", isAuthenticated, async (req, res) => {
+  try {
+    const r = await fetch(
+      `http://127.0.0.1:${CONTROL_PORT}/control/reload-twitch`,
+      {
+        method: "POST",
+        headers: CONTROL_TOKEN
+          ? { "x-control-token": CONTROL_TOKEN }
+          : undefined,
+      }
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) return res.status(r.status).json(data || { error: "Failed" });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Trigger bot to check Twitch now
+app.post("/api/twitch/check", isAuthenticated, async (req, res) => {
+  try {
+    const r = await fetch(
+      `http://127.0.0.1:${CONTROL_PORT}/control/check-twitch`,
+      {
+        method: "POST",
+        headers: CONTROL_TOKEN
+          ? { "x-control-token": CONTROL_TOKEN }
+          : undefined,
+      }
+    );
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) return res.status(r.status).json(data || { error: "Failed" });
+    res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

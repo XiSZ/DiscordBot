@@ -5,19 +5,35 @@ let currentConfig = null;
 let availableChannels = [];
 let channelFetchError = null;
 
+// Utility: fetch with timeout and JSON parsing
+async function fetchJSON(url, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    const text = await res.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { raw: text }; }
+    if (!res.ok) {
+      const err = new Error(data?.error || res.statusText || "Request failed");
+      err.status = res.status; err.data = data; throw err;
+    }
+    return data;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 // Check if user is authenticated
 async function checkAuth() {
   try {
     const response = await fetch("/api/user");
     if (!response.ok) {
-    const r = await fetch(currentGuildId ? `/api/commands?guildId=${currentGuildId}` : "/api/commands");
       window.location.href = "/";
       return false;
-    renderCommandsList(data.commands || []);
+    }
     const user = await response.json();
-    document.getElementById(
-      "userInfo"
-    ).textContent = `${user.username}#${user.discriminator}`;
+    document.getElementById("userInfo").textContent = `${user.username}#${user.discriminator}`;
     return true;
   } catch (error) {
     console.error("Auth error:", error);
@@ -27,72 +43,59 @@ async function checkAuth() {
   }
 }
 
-  const globalCount = commands.filter(c=>c.scope==='global').length;
-  const guildCount = commands.filter(c=>c.scope==='guild').length;
-  const scopeInfo = currentGuildId
-    ? `<div class="alert alert-info py-2 px-3 mb-2"><i class="bi bi-info-circle"></i> Showing global commands and commands registered in the selected server.</div>`
-    : `<div class="alert alert-secondary py-2 px-3 mb-2"><i class="bi bi-info-circle"></i> No server selected — showing global commands only.</div>`;
-
-  container.innerHTML = scopeInfo +
-    commands
+// (removed stray commands rendering fragment)
 async function loadGuilds() {
   const container = document.getElementById("serversList");
-
+  if (container) {
+    container.innerHTML = `
+      <div class="col-12 text-center py-5">
+        <div class="spinner-border text-secondary" role="status"></div>
+        <p class="mt-3 text-muted">Loading servers…</p>
+      </div>`;
+  }
   try {
-    const response = await fetch("/api/guilds");
+    const data = await fetchJSON("/api/guilds");
+    guilds = Array.isArray(data) ? data : (data.guilds || []);
 
-    if (!response.ok) {
-      throw new Error(
-        `Server returned ${response.status}: ${response.statusText}`
-      );
-    }
-
-    guilds = await response.json();
-
-    if (guilds.length === 0) {
-      container.innerHTML = `
-                <div class="col-12 text-center py-5">
-                    <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
-                    <p class="mt-3 text-muted">No servers found where you have "Manage Server" permission</p>
-                </div>
-            `;
+    if (!guilds || guilds.length === 0) {
+      if (container) {
+        container.innerHTML = `
+          <div class="col-12 text-center py-5">
+            <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="mt-3 text-muted">No servers found where you have &quot;Manage Server&quot; permission</p>
+          </div>`;
+      }
       return;
     }
 
-    container.innerHTML = guilds
-      .map((guild) => {
-        const iconUrl = guild.icon
-          ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`
-          : "https://cdn.discordapp.com/embed/avatars/0.png";
-
-        return `
-                <div class="col-md-4 col-lg-3 mb-3">
-                    <div class="server-card card h-100" onclick="selectGuild('${
-                      guild.id
-                    }', '${guild.name.replace(/'/g, "\\'")}')">
-                        <div class="card-body text-center">
-                            <img src="${iconUrl}" alt="${guild.name}" 
-                                class="rounded-circle mb-3" width="80" height="80">
-                            <h6 class="card-title">${guild.name}</h6>
-                            <small class="text-muted">Click to manage</small>
-                        </div>
-                    </div>
-                </div>
-            `;
-      })
-      .join("");
+    const html = guilds.map((guild) => {
+      const iconUrl = guild.icon
+        ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`
+        : "https://cdn.discordapp.com/embed/avatars/0.png";
+      return `
+        <div class="col-md-4 col-lg-3 mb-3">
+          <div class="server-card card h-100" onclick="selectGuild('${guild.id}', '${guild.name.replace(/'/g, "\\'")}')">
+            <div class="card-body text-center">
+              <img src="${iconUrl}" alt="${guild.name}" class="rounded-circle mb-3" width="80" height="80">
+              <h6 class="card-title">${guild.name}</h6>
+              <small class="text-muted">Click to manage</small>
+            </div>
+          </div>
+        </div>`;
+    }).join("");
+    if (container) container.innerHTML = html;
   } catch (error) {
-    console.error("Error loading guilds:", error);
-    container.innerHTML = `
-      <div class="col-12 text-center py-5">
-        <i class="bi bi-exclamation-triangle" style="font-size: 3rem; color: #dc3545;"></i>
-        <h5 class="mt-3 text-danger">Failed to load servers</h5>
-        <p class="text-muted">${error.message}</p>
-        <button class="btn btn-primary mt-3" onclick="loadGuilds()">
-          <i class="bi bi-arrow-clockwise"></i> Retry
-        </button>
-      </div>
-    `;
+    if (container) {
+      container.innerHTML = `
+        <div class="col-12 text-center py-5">
+          <i class="bi bi-exclamation-triangle" style="font-size: 3rem; color: #dc3545;"></i>
+          <h5 class="mt-3 text-danger">Failed to load servers</h5>
+          <p class="text-muted">${error.message}</p>
+          <button class="btn btn-primary mt-3" onclick="loadGuilds()">
+            <i class="bi bi-arrow-clockwise"></i> Retry
+          </button>
+        </div>`;
+    }
   }
 }
 
@@ -968,57 +971,182 @@ async function loadTwitchContent() {
 
   const content = document.getElementById("twitchContent");
   content.innerHTML = `
-    <div class="row">
-      <div class="col-12">
-        <div class="stat-card">
-          <h5><i class="bi bi-broadcast"></i> Twitch Integration</h5>
-          <hr>
-          <p class="text-muted">
-            <i class="bi bi-info-circle"></i> 
-            Twitch notifications are configured using Discord slash commands.
-          </p>
-          
-          <div class="alert alert-info">
-            <h6 class="alert-heading"><i class="bi bi-terminal"></i> How to Configure Twitch Alerts</h6>
-            <p class="mb-2">Use the following commands in your Discord server:</p>
-            <ul class="mb-2">
-              <li><code>/twitch-notify add &lt;streamer&gt; [channel]</code> - Monitor a Twitch streamer</li>
-              <li><code>/twitch-notify remove &lt;streamer&gt;</code> - Stop monitoring a streamer</li>
-              <li><code>/twitch-notify list</code> - View all monitored streamers</li>
-              <li><code>/twitch-notify channel &lt;channel&gt;</code> - Set notification channel</li>
-            </ul>
-            <p class="mb-0">
-              <strong>Note:</strong> You need to run these commands in Discord. 
-              The bot will check for live streams every 5 minutes and send notifications automatically.
-            </p>
-          </div>
+    <div class="d-flex justify-content-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  `;
 
-          <div class="card bg-light border-0 mt-3">
-            <div class="card-body">
-              <h6><i class="bi bi-gear"></i> Requirements</h6>
-              <ul class="mb-0">
-                <li>Bot must have <strong>Manage Server</strong> or <strong>Administrator</strong> permissions</li>
-                <li>Twitch API credentials must be configured on the bot</li>
-                <li>Notifications require a text channel where the bot can send messages</li>
-              </ul>
+  try {
+    const [cfgRes, chanRes] = await Promise.all([
+      fetch(`/api/guild/${currentGuildId}/twitch-config`),
+      fetch(`/api/guild/${currentGuildId}/channels`),
+    ]);
+
+    const cfg = await cfgRes.json();
+    let chans = { channels: [] };
+    if (chanRes.ok) {
+      chans = await chanRes.json();
+    }
+
+    const channels = Array.isArray(chans.channels) ? chans.channels : [];
+    const streamers = Array.isArray(cfg.streamers) ? cfg.streamers : [];
+    const selected = cfg.channelId || "";
+
+    const channelOptions = [
+      `<option value="">Select a channel...</option>`,
+      ...channels.map(
+        (c) => `<option value="${c.id}" ${selected === c.id ? "selected" : ""}>#${c.name}</option>`
+      ),
+    ].join("");
+
+    content.innerHTML = `
+      <div class="row">
+        <div class="col-md-6">
+          <div class="stat-card">
+            <h5><i class="bi bi-broadcast"></i> Twitch Notification Channel</h5>
+            <hr>
+            <div class="mb-3">
+              <label class="form-label fw-bold"><i class="bi bi-hash"></i> Channel</label>
+              <select id="twitchChannel" class="form-select">${channelOptions}</select>
+              <small class="text-muted d-block mt-1"><i class="bi bi-info-circle"></i> The channel where live notifications will be posted</small>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-secondary" onclick="reloadTwitchConfigNow()"><i class="bi bi-arrow-clockwise"></i> Reload Config</button>
+              <button class="btn btn-outline-primary" onclick="checkTwitchNow()"><i class="bi bi-lightning-charge"></i> Check Now</button>
             </div>
           </div>
-
-          <div class="card bg-light border-0 mt-3">
-            <div class="card-body">
-              <h6><i class="bi bi-lightning-charge"></i> Features</h6>
-              <ul class="mb-0">
-                <li>Real-time notifications when streamers go live</li>
-                <li>Automatic stream status checking every 5 minutes</li>
-                <li>Rich embed with stream title, game, and viewer count</li>
-                <li>Direct link to stream in notification</li>
-              </ul>
+        </div>
+        <div class="col-md-6">
+          <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="mb-0"><i class="bi bi-people"></i> Monitored Streamers</h5>
+              <span class="badge bg-primary" id="twitchStreamersCount">${streamers.length}</span>
+            </div>
+            <hr>
+            <div id="twitchStreamersList"></div>
+            <div class="mt-3">
+              <label class="form-label fw-bold">Add Streamer</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-person-plus"></i></span>
+                <input type="text" class="form-control" id="newStreamer" placeholder="twitch_username" />
+                <button class="btn btn-primary" onclick="addStreamer()"><i class="bi bi-plus"></i> Add</button>
+              </div>
+              <small class="text-muted d-block mt-1"><i class="bi bi-info-circle"></i> Usernames are case-insensitive (letters, numbers, underscores)</small>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  `;
+
+      <div class="row mt-3">
+        <div class="col-12">
+          <div class="stat-card d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="mb-1"><i class="bi bi-floppy"></i> Save Changes</h5>
+              <small class="text-muted">Save your Twitch settings for this server</small>
+            </div>
+            <button class="btn btn-success btn-lg" onclick="saveTwitchConfig()"><i class="bi bi-check-circle"></i> Save</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Keep state locally
+    window._twitchStreamers = streamers.slice();
+    renderStreamerList();
+  } catch (error) {
+    console.error("Error loading guilds:", error);
+  }
+}
+
+function renderStreamerList() {
+        <p class="text-muted">${error.message || 'Unknown error'}</p>
+        ${error.status === 401 ? '<p class="text-muted">Your session may have expired. Please log in again.</p>' : ''}
+  const badge = document.getElementById("twitchStreamersCount");
+  const streamers = Array.isArray(window._twitchStreamers) ? window._twitchStreamers : [];
+  if (badge) badge.textContent = streamers.length;
+  if (!list) return;
+  if (streamers.length === 0) {
+    list.innerHTML = '<div class="text-muted p-2 border rounded bg-light"><i class="bi bi-info-circle"></i> No streamers monitored</div>';
+    return;
+  }
+  list.innerHTML = streamers
+    .map(
+      (s) => `
+      <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2">
+        <div><i class="bi bi-twitch me-1"></i><strong>${s}</strong></div>
+        <button class="btn btn-sm btn-outline-danger" onclick="removeStreamer('${s}')"><i class="bi bi-trash"></i></button>
+      </div>`
+    )
+    .join("");
+}
+
+function addStreamer() {
+  const input = document.getElementById("newStreamer");
+  if (!input) return;
+  const raw = (input.value || "").trim();
+  const username = raw.toLowerCase();
+  if (!username) return alert("Please enter a Twitch username");
+  if (!/^\w{3,25}$/.test(username)) return alert("Invalid username. Use 3-25 letters, numbers, or underscores.");
+  window._twitchStreamers = Array.from(new Set([...(window._twitchStreamers || []), username]));
+  input.value = "";
+  renderStreamerList();
+}
+
+function removeStreamer(name) {
+  if (!confirm(`Remove streamer ${name}?`)) return;
+  window._twitchStreamers = (window._twitchStreamers || []).filter((s) => s !== name);
+  renderStreamerList();
+}
+
+async function saveTwitchConfig() {
+  try {
+    const channelId = document.getElementById("twitchChannel")?.value || null;
+    const streamers = Array.isArray(window._twitchStreamers) ? window._twitchStreamers : [];
+    const r = await fetch(`/api/guild/${currentGuildId}/twitch-config`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ channelId, streamers }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Failed to save Twitch config");
+    const success = document.createElement("div");
+    success.className = "alert alert-success mt-3";
+    success.innerHTML = `<i class="bi bi-check-circle"></i> ${data.message || 'Saved.'}`;
+    document.getElementById("twitchContent").prepend(success);
+    setTimeout(() => success.remove(), 4000);
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function reloadTwitchConfigNow() {
+  try {
+    const r = await fetch(`/api/twitch/reload`, { method: "POST" });
+    if (!r.ok) throw new Error((await r.json()).error || "Failed to reload");
+    const a = document.createElement("div");
+    a.className = "alert alert-success mt-3";
+    a.innerHTML = '<i class="bi bi-check-circle"></i> Reloaded Twitch configuration.';
+    document.getElementById("twitchContent").prepend(a);
+    setTimeout(() => a.remove(), 3000);
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function checkTwitchNow() {
+  try {
+    const r = await fetch(`/api/twitch/check`, { method: "POST" });
+    if (!r.ok) throw new Error((await r.json()).error || "Failed to trigger check");
+    const a = document.createElement("div");
+    a.className = "alert alert-success mt-3";
+    a.innerHTML = '<i class="bi bi-check-circle"></i> Triggered immediate Twitch check.';
+    document.getElementById("twitchContent").prepend(a);
+    setTimeout(() => a.remove(), 3000);
+  } catch (e) {
+    alert(e.message);
+  }
 }
 
 // Navigation click handlers
@@ -1188,7 +1316,7 @@ async function deleteCommand(id, scope) {
     const r = await fetch("/api/commands/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ commandId: id, scope }),
+      body: JSON.stringify({ commandId: id, scope, guildId: scope === 'guild' ? currentGuildId : undefined }),
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || "Delete failed");

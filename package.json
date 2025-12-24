@@ -5,8 +5,9 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "npm run generate-guide && node src/index.js",
-    "dashboard": "node src/dashboard.js",
+    "start": "npm run generate-guide && node src/start-all.js",
+    "start:bot": "npm run generate-guide && node src/index.js",
+    "start:dashboard": "node src/dashboard.js",
     "start:all": "npm run generate-guide && node src/start-all.js",
     "register": "node src/register-commands.js",
     "dev": "node --watch src/index.js",

@@ -17,6 +17,7 @@ import {
   readdirSync,
 } from "fs";
 import TwitchAPI from "./twitch-api.js";
+import express from "express";
 import emojiRegex from "emoji-regex";
 import {
   logger,
@@ -116,6 +117,47 @@ if (!fileOps.exists(SERVERS_DIR)) {
   }
 }
 
+// Lightweight local control API (localhost only) for dashboard triggers
+function startControlApi() {
+  const enabled =
+    (process.env.ENABLE_CONTROL_API || "true").toLowerCase() !== "false";
+  if (!enabled) return;
+  const CONTROL_PORT = Number(process.env.BOT_CONTROL_PORT || 3210);
+  const TOKEN = process.env.CONTROL_TOKEN || process.env.SESSION_SECRET || "";
+  const app = express();
+  app.use(express.json());
+
+  function checkAuth(req, res, next) {
+    if (!TOKEN) return next(); // allow if no token set
+    const tok = req.headers["x-control-token"];
+    if (tok && tok === TOKEN) return next();
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  app.post("/control/reload-twitch", checkAuth, (req, res) => {
+    try {
+      loadTwitchData(true);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/control/check-twitch", checkAuth, async (req, res) => {
+    try {
+      await checkTwitchStreamers();
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // Bind to localhost only for safety
+  app.listen(CONTROL_PORT, "127.0.0.1", () => {
+    logger.info(`Control API listening on 127.0.0.1:${CONTROL_PORT}`);
+  });
+}
+
 // Get path to server config file
 function getServerConfigPath(guildId) {
   return join(SERVERS_DIR, guildId, "twitch-config.json");
@@ -136,7 +178,7 @@ function ensureServerDirectory(guildId) {
 }
 
 // Load Twitch data from all server config files
-function loadTwitchData() {
+function loadTwitchData(suppressLog = false) {
   if (!existsSync(SERVERS_DIR)) {
     return;
   }
@@ -171,7 +213,13 @@ function loadTwitchData() {
       }
     });
 
-    logConfigurationStatus("Twitch configuration", loadedCount, loadedServers);
+    if (!suppressLog) {
+      logConfigurationStatus(
+        "Twitch configuration",
+        loadedCount,
+        loadedServers
+      );
+    }
   } catch (error) {
     logger.error(`Error loading Twitch data: ${error.message}`);
   }
@@ -264,7 +312,7 @@ function saveTranslationConfig(guildId) {
 }
 
 // Load translation data from all server config files
-function loadTranslationData() {
+function loadTranslationData(suppressLog = false) {
   if (!fileOps.exists(SERVERS_DIR)) {
     return;
   }
@@ -302,11 +350,13 @@ function loadTranslationData() {
       }
     }
 
-    logConfigurationStatus(
-      "translation configurations",
-      loadedCount,
-      loadedServers
-    );
+    if (!suppressLog) {
+      logConfigurationStatus(
+        "translation configurations",
+        loadedCount,
+        loadedServers
+      );
+    }
   } catch (error) {
     logger.error(`Failed to load translation data: ${error.message}`);
   }
@@ -1279,6 +1329,15 @@ client.once("clientReady", () => {
 
     // Start Twitch polling every 5 minutes (balances notifications with API rate limits)
     setInterval(checkTwitchStreamers, 300000);
+
+    // Periodically reload Twitch configuration written by dashboard
+    setInterval(() => {
+      try {
+        loadTwitchData(true);
+      } catch (error) {
+        logger.error(`Failed to reload Twitch config: ${error.message}`);
+      }
+    }, 30000);
   } else {
     console.log(
       "⚠️ Twitch notifications disabled (missing TWITCH_CLIENT_ID or TWITCH_ACCESS_TOKEN in .env)"
@@ -4164,6 +4223,9 @@ client.on("messageCreate", async (message) => {
       await message.reply({
         content: `❌ Unknown command \`${PREFIX}${command}\`. Use \`${PREFIX}help\` for available commands.`,
       });
+
+      // Start localhost control API
+      startControlApi();
     } catch (error) {
       console.error("❌ Error sending unknown command message:", error);
     }
@@ -5095,7 +5157,7 @@ client.on("inviteDelete", async (invite) => {
 // Auto-reload configuration every 30 seconds to pick up dashboard changes
 setInterval(() => {
   try {
-    loadTranslationData();
+    loadTranslationData(true);
   } catch (error) {
     logger.error(`Failed to reload translation config: ${error.message}`);
   }
