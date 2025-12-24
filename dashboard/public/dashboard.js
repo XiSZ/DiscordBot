@@ -269,12 +269,12 @@ function populateSidebarServerSelector() {
           : '<i class="bi bi-slash-circle"></i> Not Joined';
         return `
           <div class="sidebar-server-item ${active}" onclick="selectSidebarGuild('${g.id}')">
-            <img src="${iconUrl}" alt="${g.name}" width="32" height="32" class="rounded-circle" />
-            <div style=\"flex:1; min-width:0;\">
-              <div class="item-name">${g.name}</div>
+            <img src="${iconUrl}" alt="${g.name}" width="36" height="36" class="rounded-circle" style="flex-shrink: 0;" />
+            <div style="flex:1; min-width:0; overflow: hidden;">
+              <div class="item-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${g.name}</div>
               <div class="item-id"># ${g.id}</div>
             </div>
-            <span class="${statusClass}">${statusText}</span>
+            <span class="${statusClass}" style="flex-shrink: 0;">${statusText}</span>
           </div>`;
       })
       .join("");
