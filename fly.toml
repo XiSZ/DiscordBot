@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for auto-discord-developer-badge on 2026-01-01T01:11:19Z
+# fly.toml app configuration file generated for ab0t on 2026-01-01T15:55:17+01:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'DiscordBot'
+app = 'ab0t'
 primary_region = 'fra'
 
 [build]
@@ -17,7 +17,6 @@ primary_region = 'fra'
   processes = ['app']
 
 [[vm]]
-  cpu_kind = 'shared'
-  cpus = 2
   memory = '4gb'
+  cpus = 2
   memory_mb = 4096
