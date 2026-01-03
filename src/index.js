@@ -29,6 +29,17 @@ import {
 
 dotenv.config();
 
+// Global error handlers to catch and log crashes
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught Exception:", error);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("Unhandled Rejection at:", promise, "reason:", reason);
+  process.exit(1);
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -356,18 +367,22 @@ function startControlApi() {
   });
 
   // Bind to localhost only for safety
-  app.listen(CONTROL_PORT, "127.0.0.1", () => {
-    logger.log(`[Control API] Started on 127.0.0.1:${CONTROL_PORT}`);
-    logger.log(
-      `[Control API] Bot has access to ${client.guilds.cache.size} guilds`
-    );
-    logger.log(
-      `[Control API] Guild IDs: ${
-        Array.from(client.guilds.cache.keys()).join(", ") || "none"
-      }`
-    );
-    logger.info(`Control API listening on 127.0.0.1:${CONTROL_PORT}`);
-  });
+  if (!process.env.DISABLE_CONTROL_API) {
+    app.listen(CONTROL_PORT, "127.0.0.1", () => {
+      logger.log(`[Control API] Started on 127.0.0.1:${CONTROL_PORT}`);
+      logger.log(
+        `[Control API] Bot has access to ${client.guilds.cache.size} guilds`
+      );
+      logger.log(
+        `[Control API] Guild IDs: ${
+          Array.from(client.guilds.cache.keys()).join(", ") || "none"
+        }`
+      );
+      logger.info(`Control API listening on 127.0.0.1:${CONTROL_PORT}`);
+    });
+  } else {
+    logger.log(`[Control API] Disabled (DISABLE_CONTROL_API=true)`);
+  }
 }
 
 // Get path to server config file
