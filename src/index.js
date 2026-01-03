@@ -48,12 +48,15 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.GuildPresences,
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildModeration,
   ],
+});
+
+// Handle client errors
+client.on("error", (error) => {
+  logger.error("Discord client error:", error);
 });
 
 // Command prefix (can be customized via .env file or runtime)
@@ -5708,8 +5711,7 @@ if (!process.env.DISCORD_TOKEN) {
   logger.log(
     "Please check your .env file and ensure DISCORD_TOKEN is correctly set"
   );
-  setTimeout(() => process.exit(1), 2000);
-  return;
+  process.exit(1);
 }
 
 try {
