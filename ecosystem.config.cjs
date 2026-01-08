@@ -3,8 +3,15 @@ module.exports = {
     {
       name: "discordbot",
       script: "src/index.js",
-      watch: false, // Disable watch on serv00 to reduce resource usage
-      ignore_watch: ["logs", "node_modules", ".git", "data", "sessions", "invite-bot.html"],
+      watch: true, // Disable watch on serv00 to reduce resource usage
+      ignore_watch: [
+        "logs",
+        "node_modules",
+        ".git",
+        "data",
+        "sessions",
+        "invite-bot.html",
+      ],
       instances: 1,
       autorestart: true,
       max_memory_restart: "500M", // Restart if memory exceeds 500MB
