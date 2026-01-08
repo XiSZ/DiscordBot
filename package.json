@@ -9,6 +9,7 @@
     "start:bot": "node src/index.js",
     "start:dashboard": "node src/dashboard.js",
     "start:all": "npm run generate-guide && node src/start-all.js",
+    "start:pm2": "npm run generate-guide && pm2 start ecosystem.config.cjs",
     "register": "node src/register-commands.js",
     "dev": "node --watch src/index.js",
     "generate-guide": "node src/generate-guide.js",
